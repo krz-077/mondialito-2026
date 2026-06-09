@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: mondialito-2026
+    runtime: python
+    buildCommand: pip install -r requirements.txt && python seed.py
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2
+    envVarGroups:
+      - mondialito-db
+
+databases:
+  - name: mondialito-db
+    region: ohio
+    plan: free
+    ipAllowList: []
