@@ -476,6 +476,19 @@ def admin_toggle_disable(user_id):
     return jsonify({"ok": True, "disabled": user.disabled})
 
 
+@app.route("/api/admin/users/<int:user_id>/reset-selections", methods=["POST"])
+def admin_reset_selections(user_id):
+    if not admin_required():
+        return jsonify({"error": "Solo admin"}), 403
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "Utente non trovato"}), 404
+    Selection.query.filter_by(user_id=user_id).delete()
+    user.locked = False
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/simulate-results", methods=["POST"])
 def simulate_results():
     user_id = session.get("user_id")

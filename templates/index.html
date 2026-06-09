@@ -1119,6 +1119,7 @@ async function loadAdminUsers() {
             const toggleLabel = u.disabled ? 'Riabilita' : 'Disabilita';
             html += '<tr><td class="name">' + u.name + '</td><td>' + status + '</td><td>'
                 + '<button class="btn secondary" style="padding:0.3rem 0.8rem;font-size:0.8rem;" onclick="resetPw(' + u.id + ')">\u{1F511} Password</button> '
+                + '<button class="btn secondary" style="padding:0.3rem 0.8rem;font-size:0.8rem;" onclick="resetSelections(' + u.id + ')">\u{1F504} Reset Squadra</button> '
                 + '<button class="btn secondary" style="padding:0.3rem 0.8rem;font-size:0.8rem;" onclick="toggleDisable(' + u.id + ',' + u.disabled + ')">' + toggleLabel + '</button>'
                 + '</td></tr>';
         }
@@ -1137,6 +1138,12 @@ async function resetPw(userId) {
 async function toggleDisable(userId, currentlyDisabled) {
     if (!confirm(currentlyDisabled ? 'Riabilitare questo utente?' : 'Disabilitare questo utente? I suoi dati rimarranno.')) return;
     try { await API.post('/api/admin/users/' + userId + '/toggle-disable'); loadAdminUsers(); }
+    catch(e) { alert('Errore: ' + e.message); }
+}
+
+async function resetSelections(userId) {
+    if (!confirm('Resettare la squadra di questo utente? Potrà scegliere di nuovo le 6 squadre.')) return;
+    try { await API.post('/api/admin/users/' + userId + '/reset-selections'); loadAdminUsers(); alert('Squadra resettata!'); }
     catch(e) { alert('Errore: ' + e.message); }
 }
 
