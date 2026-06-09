@@ -16,6 +16,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
+# Ensure data directory exists for SQLite
+os.makedirs(os.path.join(os.path.dirname(__file__), "data"), exist_ok=True)
+
 with app.app_context():
     db.create_all()
 
