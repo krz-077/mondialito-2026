@@ -12,6 +12,11 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-mondialito")
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", "sqlite:///" + os.path.join(os.path.dirname(__file__), "data", "mondialito.db")
 )
+# Use pg8000 driver for PostgreSQL (pure Python, no compilation)
+if app.config["SQLALCHEMY_DATABASE_URI"] and "postgresql://" in app.config["SQLALCHEMY_DATABASE_URI"]:
+    app.config["SQLALCHEMY_DATABASE_URI"] = app.config["SQLALCHEMY_DATABASE_URI"].replace(
+        "postgresql://", "postgresql+pg8000://", 1
+    )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
