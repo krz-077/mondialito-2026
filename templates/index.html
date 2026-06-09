@@ -737,7 +737,13 @@ async function loadAllUsersSelections() {
         }
         card.style.display = 'block';
 
-        // Find min/max per fascia for color gradient
+        // Only show team names if current user has already submitted
+        let locked = false;
+        try {
+            const sel = await API.get('/api/selections');
+            locked = sel.locked;
+        } catch(e) {}
+
         const fasciaPts = {};
         Object.keys(punteggi).forEach(f => { fasciaPts[f] = []; });
         withTeams.forEach(u => {
@@ -761,22 +767,26 @@ async function loadAllUsersSelections() {
         }
 
         let html = '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>#</th><th>Giocatore</th><th>Totale</th>';
-        Object.entries(punteggi).forEach(([f]) => {
-            html += `<th style="text-align:center;color:#f0c040;font-size:0.8rem;">${f}°</th>`;
-        });
+        if (locked) {
+            Object.entries(punteggi).forEach(([f]) => {
+                html += `<th style="text-align:center;color:#f0c040;font-size:0.8rem;">${f}°</th>`;
+            });
+        }
         html += '</tr></thead><tbody>';
         withTeams.forEach((u, i) => {
             const rank = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
             html += `<tr class="${rank}"><td class="pos">${i + 1}</td><td class="name">${u.name}</td><td class="pts">${u.total_points}</td>`;
-            Object.entries(punteggi).forEach(([f]) => {
-                const detail = u.details[f];
-                if (detail) {
-                    const color = ptColor(detail.points, f);
-                    html += `<td style="text-align:center;"><span style="font-size:0.85rem;">${detail.team}</span><br><span style="font-weight:700;color:${color};">${detail.points}pt</span></td>`;
-                } else {
-                    html += `<td style="text-align:center;color:#445;">-</td>`;
-                }
-            });
+            if (locked) {
+                Object.entries(punteggi).forEach(([f]) => {
+                    const detail = u.details[f];
+                    if (detail) {
+                        const color = ptColor(detail.points, f);
+                        html += `<td style="text-align:center;"><span style="font-size:0.85rem;">${detail.team}</span><br><span style="font-weight:700;color:${color};">${detail.points}pt</span></td>`;
+                    } else {
+                        html += `<td style="text-align:center;color:#445;">-</td>`;
+                    }
+                });
+            }
             html += '</tr>';
         });
         html += '</tbody></table></div>';
@@ -1069,7 +1079,7 @@ document.getElementById('saveBonusBtn').onclick = async () => {
     }
 };
 
-// --- GUEST LEADERBOARD ---
+// --- GUEST LEADERBOARD (solo punti totali, niente squadre) ---
 async function loadStandingsForGuests() {
     const container = document.getElementById('selectionsContainer');
     const card = document.getElementById('leaderboardCard');
@@ -1079,29 +1089,10 @@ async function loadStandingsForGuests() {
         const withTeams = standings.filter(u => Object.keys(u.details || {}).length > 0);
         if (withTeams.length === 0) { card.style.display = 'none'; return; }
         card.style.display = 'block';
-        const fasciaPts = {};
-        Object.keys(punteggi).forEach(f => { fasciaPts[f] = []; });
-        withTeams.forEach(u => Object.entries(u.details || {}).forEach(([f, d]) => { if (fasciaPts[f]) fasciaPts[f].push(d.points); }));
-        const fasciaMin = {}, fasciaMax = {};
-        Object.entries(fasciaPts).forEach(([f, pts]) => { fasciaMin[f] = Math.min(...pts); fasciaMax[f] = Math.max(...pts); });
-        function ptColor(points, fascia) {
-            const min = fasciaMin[fascia], max = fasciaMax[fascia];
-            if (max === min) return '#f0c040';
-            const ratio = (points - min) / (max - min);
-            return 'rgb(' + Math.round(255 * (1 - ratio)) + ',' + Math.round(200 * ratio) + ',60)';
-        }
-        let html = '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>#</th><th>Giocatore</th><th>Totale</th>';
-        Object.entries(punteggi).forEach(([f]) => { html += '<th style="text-align:center;color:#f0c040;font-size:0.8rem;">' + f + '°</th>'; });
-        html += '</tr></thead><tbody>';
+        let html = '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>#</th><th>Giocatore</th><th>Punti</th></tr></thead><tbody>';
         withTeams.forEach((u, i) => {
             const rank = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
-            html += '<tr class="' + rank + '"><td class="pos">' + (i + 1) + '</td><td class="name">' + u.name + '</td><td class="pts">' + u.total_points + '</td>';
-            Object.entries(punteggi).forEach(([f]) => {
-                const detail = u.details[f];
-                if (detail) html += '<td style="text-align:center;"><span style="font-size:0.85rem;">' + detail.team + '</span><br><span style="font-weight:700;color:' + ptColor(detail.points, f) + ';">' + detail.points + 'pt</span></td>';
-                else html += '<td style="text-align:center;color:#445;">-</td>';
-            });
-            html += '</tr>';
+            html += '<tr class="' + rank + '"><td class="pos">' + (i + 1) + '</td><td class="name">' + u.name + '</td><td class="pts">' + u.total_points + '</td></tr>';
         });
         html += '</tbody></table></div>';
         document.getElementById('leaderboardContainer').innerHTML = html;
