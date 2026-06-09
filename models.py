@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import os
 
 db = SQLAlchemy()
 
@@ -60,12 +61,15 @@ def get_fascia_name(team_name):
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)
+    instance = db.Column(db.String(50), nullable=False, default="default")
+    name = db.Column(db.String(100), nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     locked = db.Column(db.Boolean, default=False)
     disabled = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint("instance", "name"),)
 
     selections = db.relationship("Selection", backref="user", lazy=True)
 
@@ -90,9 +94,14 @@ class Selection(db.Model):
 
     __table_args__ = (db.UniqueConstraint("user_id", "fascia"),)
 
+    @property
+    def _inst(self):
+        return os.environ.get("INSTANCE", "default")
+
     def puntos(self, matchday=None):
         fascia_pts = PUNTEGGI[self.fascia]
         query = Match.query.filter(
+            Match.instance == self._inst,
             ((Match.home_team == self.team_name) | (Match.away_team == self.team_name)),
             Match.home_score.isnot(None),
             Match.away_score.isnot(None),
@@ -118,9 +127,8 @@ class Selection(db.Model):
     def points(self, matchday=None):
         pts = self.puntos(matchday)
         if matchday is None:
-            from flask import current_app
-            winner_cfg = Config.query.filter_by(key="world_cup_winner").first()
-            runner_cfg = Config.query.filter_by(key="world_cup_runner_up").first()
+            winner_cfg = Config.query.filter_by(instance=self._inst, key="world_cup_winner").first()
+            runner_cfg = Config.query.filter_by(instance=self._inst, key="world_cup_runner_up").first()
             if winner_cfg and self.team_name == winner_cfg.value:
                 pts += 10
             if runner_cfg and self.team_name == runner_cfg.value:
@@ -130,6 +138,7 @@ class Selection(db.Model):
 
 class Match(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    instance = db.Column(db.String(50), nullable=False, default="default")
     matchday = db.Column(db.Integer, nullable=False)
     home_team = db.Column(db.String(100), nullable=False)
     away_team = db.Column(db.String(100), nullable=False)
@@ -140,5 +149,8 @@ class Match(db.Model):
 
 class Config(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    key = db.Column(db.String(100), unique=True, nullable=False)
+    instance = db.Column(db.String(50), nullable=False, default="default")
+    key = db.Column(db.String(100), nullable=False)
     value = db.Column(db.String(500), nullable=True)
+
+    __table_args__ = (db.UniqueConstraint("instance", "key"),)

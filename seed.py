@@ -116,17 +116,19 @@ def seed():
             print(f"DB non ancora pronto: {e}. Riproverà al primo avvio.")
             return
 
-        if Match.query.first():
-            print("Database già popolato. Salto seed.")
+        from app import INSTANCE
+        if Match.query.filter_by(instance=INSTANCE).first():
+            print(f"Database già popolato per istanza '{INSTANCE}'. Salto seed.")
             return
 
         for md, home, away, date in MATCHES:
-            match = Match(matchday=md, home_team=home, away_team=away, date=date)
+            match = Match(instance=INSTANCE, matchday=md, home_team=home, away_team=away, date=date)
             db.session.add(match)
 
         # Admin user
-        if not User.query.filter_by(name="admin").first():
+        if not User.query.filter_by(instance=INSTANCE, name="admin").first():
             admin = User(
+                instance=INSTANCE,
                 name="admin",
                 password_hash=generate_password_hash("nicolamerola29"),
                 is_admin=True,
@@ -135,7 +137,7 @@ def seed():
             db.session.add(admin)
 
         db.session.commit()
-        print(f"Inserite {len(MATCHES)} partite ({len(set(m[0] for m in MATCHES))} giornate)")
+        print(f"Inserite {len(MATCHES)} partite per istanza '{INSTANCE}'")
 
 if __name__ == "__main__":
     seed()

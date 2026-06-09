@@ -19,6 +19,8 @@ db.init_app(app)
 # Ensure data directory exists for SQLite
 os.makedirs(os.path.join(os.path.dirname(__file__), "data"), exist_ok=True)
 
+INSTANCE = os.environ.get("INSTANCE", "default")
+
 with app.app_context():
     db.create_all()
 
@@ -30,7 +32,7 @@ def index():
 
 @app.route("/api/users", methods=["GET"])
 def get_users():
-    users = User.query.all()
+    users = User.query.filter_by(instance=INSTANCE).all()
     return jsonify([{"id": u.id, "name": u.name} for u in users])
 
 
@@ -39,7 +41,7 @@ def check_user():
     name = request.args.get("name", "").strip()
     if not name:
         return jsonify({"exists": False}), 400
-    user = User.query.filter_by(name=name).first()
+    user = User.query.filter_by(instance=INSTANCE, name=name).first()
     return jsonify({"exists": user is not None})
 
 
@@ -52,9 +54,9 @@ def create_user():
         return jsonify({"error": "Nome obbligatorio"}), 400
     if not password:
         return jsonify({"error": "Password obbligatoria"}), 400
-    if User.query.filter_by(name=name).first():
+    if User.query.filter_by(instance=INSTANCE, name=name).first():
         return jsonify({"error": "Utente già esistente"}), 400
-    user = User(name=name, password_hash=generate_password_hash(password))
+    user = User(instance=INSTANCE, name=name, password_hash=generate_password_hash(password))
     db.session.add(user)
     db.session.commit()
     session["user_id"] = user.id
@@ -68,7 +70,7 @@ def login():
     data = request.get_json()
     name = data.get("name", "").strip()
     password = data.get("password", "").strip()
-    user = User.query.filter_by(name=name).first()
+    user = User.query.filter_by(instance=INSTANCE, name=name).first()
     if not user:
         return jsonify({"error": "Utente non trovato"}), 404
     if user.disabled:
@@ -139,7 +141,7 @@ def selections():
 @app.route("/api/matches", methods=["GET"])
 def get_matches():
     matchday = request.args.get("matchday", type=int)
-    query = Match.query
+    query = Match.query.filter_by(instance=INSTANCE)
     if matchday:
         query = query.filter(Match.matchday == matchday)
     matches = query.order_by(Match.matchday, Match.date, Match.id).all()
@@ -170,9 +172,10 @@ def save_matches():
     matchday = data.get("matchday", 1)
     matches = data.get("matches", [])
 
-    Match.query.filter_by(matchday=matchday).delete()
+    Match.query.filter_by(instance=INSTANCE, matchday=matchday).delete()
     for m in matches:
         match = Match(
+            instance=INSTANCE,
             matchday=matchday,
             home_team=m["home_team"],
             away_team=m["away_team"],
@@ -208,7 +211,7 @@ def update_scores():
 
 @app.route("/api/standings")
 def get_standings():
-    users = User.query.all()
+    users = User.query.filter_by(instance=INSTANCE).all()
     matchday = request.args.get("matchday", type=int)
     result = []
     for user in users:
@@ -241,7 +244,7 @@ def calculate_matchday():
     matchday = data.get("matchday")
 
     standings = []
-    users = User.query.all()
+    users = User.query.filter_by(instance=INSTANCE).all()
     for user in users:
         total = 0
         for s in user.selections:
@@ -254,7 +257,7 @@ def calculate_matchday():
 
 @app.route("/api/leaderboard")
 def full_leaderboard():
-    users = User.query.all()
+    users = User.query.filter_by(instance=INSTANCE).all()
     result = []
     for user in users:
         total = user.points()
@@ -310,7 +313,7 @@ def fetch_results():
     if not user or not user.is_admin:
         return jsonify({"error": "Solo l'admin"}), 403
 
-    api_key_cfg = Config.query.filter_by(key="football_api_key").first()
+    api_key_cfg = Config.query.filter_by(instance=INSTANCE, key="football_api_key").first()
     api_key = api_key_cfg.value if api_key_cfg else None
     if not api_key:
         return jsonify({
@@ -323,7 +326,7 @@ def fetch_results():
     headers = {"X-Auth-Token": api_key}
 
     # Try competition IDs: 2000 (World Cup generic), then try to search
-    comp_ids_cfg = Config.query.filter_by(key="football_competition_id").first()
+    comp_ids_cfg = Config.query.filter_by(instance=INSTANCE, key="football_competition_id").first()
     comp_ids = [comp_ids_cfg.value] if comp_ids_cfg and comp_ids_cfg.value else ["2000", "2018", "2001", "2002", "2003"]
 
     last_error = ""
@@ -366,9 +369,9 @@ def fetch_results():
                 home_goal = score["fullTime"]["home"]
                 away_goal = score["fullTime"]["away"]
 
-                match = Match.query.filter_by(home_team=home_api, away_team=away_api).first()
+                match = Match.query.filter_by(instance=INSTANCE, home_team=home_api, away_team=away_api).first()
                 if not match:
-                    match = Match.query.filter_by(home_team=away_api, away_team=home_api).first()
+                    match = Match.query.filter_by(instance=INSTANCE, home_team=away_api, away_team=home_api).first()
                 if match:
                     match.home_score = home_goal
                     match.away_score = away_goal
@@ -396,22 +399,22 @@ def fetch_results():
 @app.route("/api/config", methods=["GET", "POST"])
 def config():
     if request.method == "GET":
-        configs = Config.query.all()
+        configs = Config.query.filter_by(instance=INSTANCE).all()
         return jsonify({c.key: c.value for c in configs})
     data = request.get_json()
     for key, value in data.items():
-        existing = Config.query.filter_by(key=key).first()
+        existing = Config.query.filter_by(instance=INSTANCE, key=key).first()
         if existing:
             existing.value = str(value) if value is not None else None
         else:
-            db.session.add(Config(key=key, value=str(value) if value is not None else None))
+            db.session.add(Config(instance=INSTANCE, key=key, value=str(value) if value is not None else None))
     db.session.commit()
     return jsonify({"ok": True})
 
 
 @app.route("/api/matchdays")
 def get_matchdays():
-    matchdays = db.session.query(Match.matchday).distinct().order_by(Match.matchday).all()
+    matchdays = db.session.query(Match.matchday).filter(Match.instance == INSTANCE).distinct().order_by(Match.matchday).all()
     return jsonify([m[0] for m in matchdays])
 
 
@@ -436,7 +439,7 @@ def admin_required():
 def admin_get_users():
     if not admin_required():
         return jsonify({"error": "Solo admin"}), 403
-    users = User.query.order_by(User.name).all()
+    users = User.query.filter_by(instance=INSTANCE).order_by(User.name).all()
     return jsonify([{
         "id": u.id,
         "name": u.name,
@@ -499,7 +502,7 @@ def simulate_results():
         return jsonify({"error": "Solo l'admin"}), 403
 
     import random
-    matches = Match.query.filter(Match.home_score.is_(None)).all()
+    matches = Match.query.filter(Match.instance == INSTANCE, Match.home_score.is_(None)).all()
     count = len(matches)
     for m in matches:
         m.home_score = random.randint(0, 4)
