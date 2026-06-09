@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mondialito 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #0a0e27;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding-bottom: 4rem;
+}
+header {
+    background: linear-gradient(135deg, #0f1638 0%, #1a2350 100%);
+    border-bottom: 2px solid #2a3a6a;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+header h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f0c040, #f0e060);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+}
+header h1 small { font-size: 0.9rem; font-weight: 400; -webkit-text-fill-color: #888; }
+nav { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+nav button, nav a {
+    background: #1e2a55;
+    color: #c8d0e0;
+    border: 1px solid #3a4a7a;
+    padding: 0.5rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+nav button:hover, nav a:hover { background: #2a3a6a; border-color: #5a7ac0; color: #fff; }
+nav button.active { background: #3a5a9a; border-color: #6a8ad0; color: #fff; }
+.user-area { display: flex; align-items: center; gap: 1rem; }
+.user-area span { color: #8ac; font-weight: 600; }
+
+.container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.card {
+    background: #111a40;
+    border: 1px solid #2a3a6a;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.card h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; color: #d0d8f0; }
+.card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.7rem; color: #a0b0d0; }
+
+.fasce-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1rem;
+}
+.fascia-card {
+    background: #0f1838;
+    border: 1px solid #2a3a5a;
+    border-radius: 12px;
+    padding: 1rem;
+}
+.fascia-card h3 {
+    color: #f0c040;
+    font-size: 0.95rem;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #2a3a5a;
+}
+.fascia-card h3 small { color: #889; font-weight: 400; }
+
+.team-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.team-option:hover { background: #1a2550; }
+.team-option input[type="radio"] { accent-color: #f0c040; width: 16px; height: 16px; cursor: pointer; }
+.team-option label { cursor: pointer; flex: 1; font-size: 0.92rem; }
+
+.btn {
+    background: linear-gradient(135deg, #f0c040, #d4a830);
+    color: #0a0e27;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(240, 192, 64, 0.3); }
+.btn:active { transform: translateY(0); }
+.btn.secondary { background: #2a3a6a; color: #c8d0e0; }
+.btn.secondary:hover { box-shadow: 0 4px 15px rgba(42, 58, 106, 0.4); }
+.btn.danger { background: #8a2a2a; color: #f0c0c0; }
+.btn.danger:hover { box-shadow: 0 4px 15px rgba(138, 42, 42, 0.4); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-weight: 600; margin-bottom: 0.3rem; color: #a0b0d0; font-size: 0.9rem; }
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    background: #0a0e27;
+    border: 1px solid #2a3a6a;
+    border-radius: 8px;
+    color: #e0e0e0;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+.form-group input:focus, .form-group select:focus { outline: none; border-color: #f0c040; }
+
+.login-form { max-width: 400px; margin: 3rem auto; text-align: center; }
+.login-form h2 { margin-bottom: 1.5rem; }
+
+.match-list { display: grid; gap: 0.5rem; }
+.match-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    background: #0f1838;
+    border-radius: 8px;
+    border: 1px solid #1a2550;
+}
+.match-row .team { font-weight: 600; font-size: 0.92rem; }
+.match-row .team.home { text-align: right; }
+.match-row .team.away { text-align: left; }
+.match-row .score {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 700;
+}
+.match-row .score input {
+    width: 36px;
+    text-align: center;
+    padding: 0.3rem;
+    background: #0a0e27;
+    border: 1px solid #2a3a6a;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+.match-row .score input:focus { border-color: #f0c040; outline: none; }
+.match-row .score .sep { color: #667; }
+
+.standings-table { width: 100%; border-collapse: collapse; }
+.standings-table th, .standings-table td { padding: 0.7rem 1rem; text-align: left; border-bottom: 1px solid #1a2550; }
+.standings-table th { color: #889; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.standings-table tr:hover td { background: #0f1838; }
+.standings-table .pos { color: #889; font-weight: 700; width: 40px; }
+.standings-table .name { font-weight: 600; }
+.standings-table .pts { font-weight: 700; color: #f0c040; text-align: right; }
+.standings-table .details { color: #889; font-size: 0.8rem; }
+.standings-table .rank-1 .pos, .standings-table .rank-1 .pts { color: #f0e060; }
+.standings-table .rank-2 .pos, .standings-table .rank-2 .pts { color: #c0c0e0; }
+.standings-table .rank-3 .pos, .standings-table .rank-3 .pts { color: #d08050; }
+
+.matchday-select {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+.matchday-select select {
+    background: #0a0e27;
+    border: 1px solid #2a3a6a;
+    color: #e0e0e0;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.alert {
+    padding: 0.8rem 1.2rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+.alert.success { background: #1a3a1a; border: 1px solid #2a5a2a; color: #8c8; }
+.alert.error { background: #3a1a1a; border: 1px solid #5a2a2a; color: #c88; }
+.alert.info { background: #1a2a4a; border: 1px solid #2a4a7a; color: #8ac; }
+
+.empty-state { text-align: center; padding: 3rem 1rem; color: #667; }
+.empty-state p { font-size: 1.1rem; }
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+    background: #111a40;
+    border: 1px solid #2a3a6a;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+}
+.modal h2 { margin-bottom: 1rem; }
+
+.tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #1a2550; }
+.tab { padding: 0.7rem 1.5rem; cursor: pointer; font-weight: 600; color: #667; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab:hover { color: #a0b0d0; }
+.tab.active { color: #f0c040; border-bottom-color: #f0c040; }
+
+.admin-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #2a3a5a; }
+.admin-section summary { cursor: pointer; font-weight: 600; color: #888; padding: 0.5rem 0; }
+.admin-section summary:hover { color: #aac; }
+
+footer {
+    text-align: center;
+    padding: 2rem;
+    color: #445;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+    header { padding: 1rem; flex-direction: column; text-align: center; }
+    header h1 { font-size: 1.4rem; }
+    .fasce-grid { grid-template-columns: 1fr; }
+    .match-row .team { font-size: 0.82rem; }
+    .standings-table th, .standings-table td { padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>🏆 Mondialito 2026 <small>– Il gioco</small></h1>
+    <div class="user-area">
+        <span id="userDisplay"></span><span id="adminBadge" style="display:none;background:#f0c040;color:#0a0e27;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;margin-left:0.3rem;">ADMIN</span>
+        <nav>
+            <button class="active" data-section="selections" id="navSelections">Squadre</button>
+            <button data-section="matches" id="navMatches">Partite</button>
+            <button data-section="users" id="navUsers" style="display:none;">Gestione Utenti</button>
+            <button data-section="rules" id="navRules">Regolamento</button>
+            <button id="loginBtn" class="secondary">Login</button>
+        </nav>
+    </div>
+</header>
+
+<div class="container">
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="loginModal">
+    <div class="modal">
+        <div id="loginStep1">
+            <h2 style="margin-bottom:0.5rem;">Benvenuto!</h2>
+            <p style="color:#889;margin-bottom:1.5rem;">Inserisci il tuo nome per iniziare</p>
+            <div class="form-group">
+                <label>Il tuo nome</label>
+                <input type="text" id="loginName" placeholder="es. Mario Rossi" autocomplete="off" style="font-size:1.1rem;padding:0.8rem 1rem;">
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+                <button class="btn" id="loginNext" style="flex:1;padding:0.8rem;font-size:1rem;">Avanti →</button>
+                <button class="btn secondary" onclick="closeLogin()">Annulla</button>
+            </div>
+        </div>
+
+        <div id="loginStep2" style="display:none;">
+            <h2 id="loginGreeting" style="margin-bottom:0.5rem;"></h2>
+            <p id="loginInstruction" style="color:#889;margin-bottom:1.5rem;"></p>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="Scrivi la password..." autocomplete="off" style="font-size:1.1rem;padding:0.8rem 1rem;">
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+                <button class="btn" id="loginConfirm" style="flex:1;padding:0.8rem;font-size:1rem;">Accedi</button>
+                <button class="btn secondary" id="loginBackBtn" onclick="backToStep1()">← Indietro</button>
+            </div>
+        </div>
+
+        <div id="loginError" class="alert error" style="display:none;margin-top:1rem;"></div>
+    </div>
+</div>
+
+<!-- SECTION: SELEZIONI -->
+<div class="section active" id="section-selections">
+    <div class="card">
+        <h2>Scegli le tue 6 squadre <small style="font-weight:400;color:#889;">(una per fascia)</small></h2>
+        <div id="selectionsContainer"></div>
+        <div style="margin-top:1rem;display:flex;gap:0.5rem;">
+            <button class="btn" id="saveSelections" style="display:none;">Salva Selezioni</button>
+        </div>
+        <div id="selectionsAlert" class="alert" style="display:none;margin-top:1rem;"></div>
+    </div>
+
+    <div class="card" id="leaderboardCard" style="display:none;">
+        <h2>Classifica</h2>
+        <div id="leaderboardContainer"></div>
+    </div>
+</div>
+
+<!-- SECTION: PARTITE -->
+<div class="section" id="section-matches">
+    <div class="card">
+        <h2>Partite</h2>
+        <div class="matchday-select">
+            <label style="color:#889;">Giornata:</label>
+            <select id="matchdayFilter" onchange="loadMatches()">
+                <option value="">Tutte</option>
+            </select>
+            <button class="btn secondary" id="fetchResultsBtn" style="display:none;">🔃 Carica risultati</button>
+        </div>
+        <div id="fetchAlert" class="alert" style="display:none;"></div>
+        <div id="matchesContainer"></div>
+        <div style="margin-top:0.5rem;display:flex;gap:0.5rem;">
+            <button class="btn secondary" id="saveScoresBtn" style="display:none;">💾 Salva punteggi</button>
+        </div>
+        <div id="apiKeySection" class="admin-section" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid #2a3a5a;">
+            <details>
+                <summary style="cursor:pointer;font-weight:600;color:#888;">⚙ Impostazioni risultati automatici</summary>
+                <div style="margin-top:0.8rem;">
+                    <p style="color:#889;font-size:0.85rem;margin-bottom:0.5rem;">
+                        API key gratuita da 
+                        <a href="https://www.football-data.org/client/register" target="_blank" style="color:#8ac;">football-data.org</a>
+                    </p>
+                    <div style="display:flex;gap:0.5rem;">
+                        <input type="text" id="apiKeyInput" placeholder="Incolla il tuo API key..." style="flex:1;padding:0.5rem 0.8rem;background:#0a0e27;border:1px solid #2a3a6a;border-radius:6px;color:#e0e0e0;">
+                        <button class="btn secondary" id="saveApiKey" style="padding:0.5rem 1rem;">Salva</button>
+                        <button class="btn secondary" id="clearApiKey" style="padding:0.5rem 1rem;">Rimuovi</button>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <div class="card" id="calcSection" style="display:none;">
+        <h2>Calcola Punteggi</h2>
+        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+            <label style="color:#889;">Giornata:</label>
+            <select id="calcMatchday">
+                <option value="">Tutte le giornate</option>
+            </select>
+            <button class="btn" id="calcBtn">📊 Calcola</button>
+            <button class="btn secondary danger" id="simulateBtn" style="background:#5a2a2a;color:#f0c0c0;">🎲 Simula risultati (test)</button>
+        </div>
+        <div id="calcResults" style="margin-top:1rem;"></div>
+
+        <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #2a3a5a;">
+            <h3>🏆 Bonus finale <small style="font-weight:400;color:#889;">(vincente +10pt, secondo +5pt)</small></h3>
+            <div style="display:flex;gap:1rem;align-items:end;flex-wrap:wrap;margin-top:0.5rem;">
+                <div class="form-group" style="flex:1;min-width:200px;">
+                    <label>Vincitore Mondiale</label>
+                    <select id="bonusWinner">
+                        <option value="">— Seleziona —</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1;min-width:200px;">
+                    <label>Secondo posto</label>
+                    <select id="bonusRunnerUp">
+                        <option value="">— Seleziona —</option>
+                    </select>
+                </div>
+                <button class="btn" id="saveBonusBtn">Salva Bonus</button>
+            </div>
+            <div id="bonusAlert" class="alert" style="display:none;margin-top:0.5rem;"></div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<!-- SECTION: GESTIONE UTENTI (admin only) -->
+<div class="section" id="section-users">
+    <div class="card">
+        <h2>👥 Gestione Utenti</h2>
+        <p style="color:#889;margin-bottom:1rem;">Clicca su un utente per resettare la password o disabilitarlo/riabilitarlo.</p>
+        <div id="adminUsersContainer"></div>
+    </div>
+</div>
+
+<!-- SECTION: REGOLAMENTO -->
+<div class="section" id="section-rules">
+    <div class="card">
+        <h2>📋 Regolamento</h2>
+
+        <h3 style="color:#f0c040;margin-top:1.5rem;">Come funziona</h3>
+        <p style="color:#c8d0e0;line-height:1.6;">
+            Scegli <strong>6 squadre</strong>, una per ogni fascia (dalla I alla VI). 
+            Il punteggio che guadagni dipende dalla fascia della squadra che hai scelto:
+            più la squadra è debole (fascia alta), più punti vale.
+        </p>
+
+        <h3 style="color:#f0c040;margin-top:1.5rem;">Punteggi per fascia</h3>
+        <div style="overflow-x:auto;margin-top:0.5rem;">
+            <table class="standings-table" style="max-width:400px;">
+                <thead><tr><th>Fascia</th><th>Vittoria</th><th>Pareggio</th><th>Sconfitta</th></tr></thead>
+                <tbody>
+                    <tr><td style="color:#f0c040;">I°</td><td>2 pt</td><td>1 pt</td><td>0 pt</td></tr>
+                    <tr><td style="color:#f0c040;">II°</td><td>4 pt</td><td>2 pt</td><td>0 pt</td></tr>
+                    <tr><td style="color:#f0c040;">III°</td><td>6 pt</td><td>3 pt</td><td>0 pt</td></tr>
+                    <tr><td style="color:#f0c040;">IV°</td><td>8 pt</td><td>4 pt</td><td>0 pt</td></tr>
+                    <tr><td style="color:#f0c040;">V°</td><td>10 pt</td><td>5 pt</td><td>0 pt</td></tr>
+                    <tr><td style="color:#f0c040;">VI°</td><td>12 pt</td><td>6 pt</td><td>0 pt</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 style="color:#f0c040;margin-top:1.5rem;">Esempi</h3>
+        <div style="background:#0f1838;border:1px solid #2a3a5a;border-radius:10px;padding:1rem;margin-top:0.5rem;">
+            <p style="color:#c8d0e0;line-height:1.6;">
+                <strong style="color:#fff;">Esempio 1:</strong> Scegli <strong>Francia</strong> (I° Fascia, vale 2pt a vittoria). 
+                La Francia vince 2-0 → guadagni <strong style="color:#8c8;">2 pt</strong>.
+            </p>
+            <p style="color:#c8d0e0;line-height:1.6;margin-top:0.8rem;">
+                <strong style="color:#fff;">Esempio 2:</strong> Scegli <strong>Sudafrica</strong> (VI° Fascia, vale 12pt a vittoria). 
+                Il Sudafrica pareggia 1-1 → guadagni <strong style="color:#f0c040;">6 pt</strong> (metà).
+            </p>
+            <p style="color:#c8d0e0;line-height:1.6;margin-top:0.8rem;">
+                <strong style="color:#fff;">Esempio 3:</strong> Scegli <strong>Giappone</strong> (III° Fascia, vale 6pt a vittoria). 
+                Il Giappone perde 0-2 → guadagni <strong style="color:#c88;">0 pt</strong>.
+            </p>
+            <p style="color:#c8d0e0;line-height:1.6;margin-top:0.8rem;">
+                <strong style="color:#fff;">Esempio 4 (combinato):</strong> Hai scelto Francia (I°), Uruguay (II°), Giappone (III°), 
+                Canada (IV°), Bosnia (V°) e Sudafrica (VI°). 
+                Dopo una giornata: Francia vince (+2), Uruguay pareggia (+2), 
+                Giappone perde (+0), Canada vince (+8), Bosnia pareggia (+5), Sudafrica perde (+0) 
+                → <strong style="color:#8c8;">totale giornata: 17 pt</strong>.
+            </p>
+        </div>
+
+        <h3 style="color:#f0c040;margin-top:1.5rem;">Punti extra</h3>
+        <p style="color:#c8d0e0;line-height:1.6;">
+            La squadra che <strong>vince il Mondiale</strong> riceve <strong style="color:#8c8;">+10 pt</strong> extra.<br>
+            La squadra <strong>seconda classificata</strong> riceve <strong style="color:#f0c040;">+5 pt</strong> extra.
+        </p>
+
+        <h3 style="color:#f0c040;margin-top:1.5rem;">Le fasce</h3>
+        <p style="color:#c8d0e0;line-height:1.6;">
+            Le 48 squadre sono divise in 6 fasce da 8 squadre ciascuna, in base alla forza:
+        </p>
+        <div style="overflow-x:auto;margin-top:0.5rem;">
+            <table class="standings-table">
+                <thead><tr><th>Fascia</th><th>Squadre</th></tr></thead>
+                <tbody>
+                    <tr><td style="color:#f0c040;">I°</td><td>Francia, Argentina, Brasile, Inghilterra, Spagna, Portogallo, Germania, Olanda</td></tr>
+                    <tr><td style="color:#f0c040;">II°</td><td>Uruguay, Colombia, Croazia, Belgio, Marocco, Stati Uniti, Messico, Svizzera</td></tr>
+                    <tr><td style="color:#f0c040;">III°</td><td>Ecuador, Senegal, Giappone, Austria, Svezia, Turchia, Corea del Sud, Repubblica Ceca</td></tr>
+                    <tr><td style="color:#f0c040;">IV°</td><td>Paraguay, Canada, Australia, Norvegia, Costa d'Avorio, Egitto, Algeria, Tunisia</td></tr>
+                    <tr><td style="color:#f0c040;">V°</td><td>Bosnia, Scozia, Ghana, Arabia Saudita, Iran, Qatar, Iraq, Panama</td></tr>
+                    <tr><td style="color:#f0c040;">VI°</td><td>Sudafrica, Uzbekistan, RD del Congo, Giordania, Haiti, Capo Verde, Curacao, Nuova Zelanda</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 style="color:#f0c040;margin-top:1.5rem;">Regole</h3>
+        <ul style="color:#c8d0e0;line-height:2;padding-left:1.2rem;">
+            <li>Ogni giocatore sceglie <strong>6 squadre</strong> (una per fascia)</li>
+            <li>La scelta viene <strong>bloccata</strong> dopo il salvataggio: non si può più cambiare</li>
+            <li>Il punteggio si calcola sui risultati <strong>dei 90 minuti</strong> (supplementari non contano)</li>
+            <li>Bonus: squadra vincente il Mondiale <strong>+10 pt</strong>, seconda <strong>+5 pt</strong></li>
+            <li>La quota di iscrizione è di <strong>10 €</strong></li>
+            <li>Vince chi totalizza più punti</li>
+        </ul>
+    </div>
+</div>
+
+<footer>Mondialito 2026 &mdash; Gioco tra amici</footer>
+
+<script>
+const API = {
+    async get(path) {
+        const r = await fetch(path);
+        if (!r.ok) throw new Error((await r.json()).error || 'Errore');
+        return r.json();
+    },
+    async post(path, data) {
+        const r = await fetch(path, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data),
+        });
+        if (!r.ok) throw new Error((await r.json()).error || 'Errore');
+        return r.json();
+    },
+};
+
+let currentUser = null;
+const fasce = {{ fasce | tojson }};
+const punteggi = {{ punteggi | tojson }};
+
+// --- NAVIGATION ---
+document.querySelectorAll('nav button[data-section]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('nav button[data-section]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('section-' + btn.dataset.section).classList.add('active');
+    });
+});
+
+// --- LOGIN ---
+async function checkSession() {
+    try {
+        const u = await API.get('/api/session');
+        if (u) {
+            currentUser = u;
+            document.getElementById('userDisplay').textContent = '👤 ' + u.name;
+            document.getElementById('loginBtn').textContent = 'Esci';
+            document.getElementById('loginBtn').onclick = logout;
+
+            if (u.is_admin) {
+                document.getElementById('navSelections').style.display = 'none';
+                document.getElementById('navMatches').style.display = '';
+                document.getElementById('navUsers').style.display = '';
+                document.getElementById('calcSection').style.display = 'block';
+                document.getElementById('fetchResultsBtn').style.display = '';
+                document.getElementById('saveScoresBtn').style.display = '';
+                document.getElementById('adminBadge').style.display = 'inline';
+                loadApiConfig();
+                populateBonusDropdowns();
+                loadBonusConfig();
+                loadMatches();
+                document.getElementById('navSelections').classList.remove('active');
+                document.getElementById('navMatches').classList.add('active');
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById('section-matches').classList.add('active');
+            } else {
+                document.getElementById('navSelections').style.display = '';
+                document.getElementById('navMatches').style.display = '';
+                document.getElementById('navUsers').style.display = 'none';
+                document.getElementById('calcSection').style.display = 'none';
+                document.getElementById('fetchResultsBtn').style.display = 'none';
+                document.getElementById('saveScoresBtn').style.display = 'none';
+                document.getElementById('adminBadge').style.display = 'none';
+                document.getElementById('apiKeySection').style.display = 'none';
+            }
+            renderSelections();
+            loadMatchdayOptions();
+        } else {
+            currentUser = null;
+            document.getElementById('userDisplay').textContent = '';
+            document.getElementById('loginBtn').textContent = 'Accedi';
+            document.getElementById('loginBtn').onclick = openLogin;
+            document.getElementById('navSelections').style.display = '';
+            document.getElementById('navMatches').style.display = 'none';
+            document.getElementById('navUsers').style.display = 'none';
+            document.getElementById('calcSection').style.display = 'none';
+            document.getElementById('fetchResultsBtn').style.display = 'none';
+            document.getElementById('saveScoresBtn').style.display = 'none';
+            document.getElementById('apiKeySection').style.display = 'none';
+            document.getElementById('adminBadge').style.display = 'none';
+            loadStandingsForGuests();
+        }
+    } catch(e) { console.error(e); }
+}
+
+function openLogin() {
+    document.getElementById('loginModal').classList.add('open');
+    document.getElementById('loginError').style.display = 'none';
+    document.getElementById('loginStep1').style.display = 'block';
+    document.getElementById('loginStep2').style.display = 'none';
+    document.getElementById('loginName').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginName').focus();
+}
+
+function closeLogin() {
+    document.getElementById('loginModal').classList.remove('open');
+}
+
+function backToStep1() {
+    document.getElementById('loginStep1').style.display = 'block';
+    document.getElementById('loginStep2').style.display = 'none';
+    document.getElementById('loginError').style.display = 'none';
+}
+
+// Enter key to proceed
+document.getElementById('loginName').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('loginNext').click();
+});
+document.getElementById('loginPassword').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('loginConfirm').click();
+});
+
+document.getElementById('loginNext').onclick = async () => {
+    const name = document.getElementById('loginName').value.trim();
+    if (!name) return showLoginError('Inserisci il tuo nome');
+    document.getElementById('loginError').style.display = 'none';
+    try {
+        const check = await API.get('/api/users/check?name=' + encodeURIComponent(name));
+        const isNew = !check.exists;
+        document.getElementById('loginStep1').style.display = 'none';
+        document.getElementById('loginStep2').style.display = 'block';
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('loginPassword').focus();
+
+        if (isNew) {
+            document.getElementById('loginGreeting').textContent = 'Ciao ' + name + '!';
+            document.getElementById('loginInstruction').textContent = 'È la prima volta che giochi? Scegli una password per registrarti.';
+            document.getElementById('loginConfirm').textContent = 'Registrati';
+            document.getElementById('loginConfirm').className = 'btn';
+            document.getElementById('loginConfirm').onclick = async () => {
+                const pw = document.getElementById('loginPassword').value;
+                if (!pw) return showLoginError('Scegli una password');
+                try {
+                    await API.post('/api/users', {name, password: pw});
+                    closeLogin();
+                    checkSession();
+                } catch(e) { showLoginError(e.message); }
+            };
+        } else {
+            document.getElementById('loginGreeting').textContent = 'Bentornato ' + name + '!';
+            document.getElementById('loginInstruction').textContent = 'Inserisci la tua password per accedere.';
+            document.getElementById('loginConfirm').textContent = 'Accedi';
+            document.getElementById('loginConfirm').className = 'btn';
+            document.getElementById('loginConfirm').onclick = async () => {
+                const pw = document.getElementById('loginPassword').value;
+                if (!pw) return showLoginError('Inserisci la password');
+                try {
+                    await API.post('/api/login', {name, password: pw});
+                    closeLogin();
+                    checkSession();
+                } catch(e) { showLoginError(e.message); }
+            };
+        }
+    } catch(e) {
+        showLoginError(e.message);
+    }
+};
+
+function showLoginError(msg) {
+    const el = document.getElementById('loginError');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+async function logout() {
+    await API.post('/api/logout');
+    currentUser = null;
+    checkSession();
+    renderSelections();
+}
+
+// --- SELEZIONI ---
+function renderSelections() {
+    const container = document.getElementById('selectionsContainer');
+    const saveBtn = document.getElementById('saveSelections');
+    if (!currentUser) {
+        container.innerHTML = '<div class="empty-state"><p>Accedi per scegliere le tue squadre</p></div>';
+        saveBtn.style.display = 'none';
+        document.getElementById('leaderboardCard').style.display = 'none';
+        return;
+    }
+
+    API.get('/api/selections').then(data => {
+        const teams = data.teams || {};
+        const locked = data.locked;
+        const hasSelections = Object.keys(teams).length === 6;
+
+        if (locked || hasSelections) {
+            let html = '<div style="text-align:center;margin-bottom:1.5rem;">';
+            html += '<div class="alert success" style="display:block;">✅ Squadra bloccata! Non puoi più modificarla.</div>';
+            html += '</div>';
+            html += '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>Fascia</th><th>Punti</th><th>Squadra</th></tr></thead><tbody>';
+            Object.entries(fasce).forEach(([fascia, _fasciaTeams]) => {
+                const fp = punteggi[fascia];
+                const chosen = teams[fascia] || '';
+                html += `<tr><td style="color:#f0c040;font-weight:600;">${fascia}°</td><td style="color:#889;">V=${fp.win} P=${fp.draw}</td><td>✅ ${chosen || '-'}</td></tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+            saveBtn.style.display = 'none';
+        } else {
+            saveBtn.style.display = '';
+            let html = '<div class="fasce-grid">';
+            Object.entries(fasce).forEach(([fascia, fasciaTeams]) => {
+                const fp = punteggi[fascia];
+                html += `<div class="fascia-card"><h3>${fascia}° Fascia <small>V=${fp.win} P=${fp.draw}</small></h3>`;
+                fasciaTeams.forEach(team => {
+                    const checked = teams[fascia] === team ? 'checked' : '';
+                    html += `<div class="team-option">
+                        <input type="radio" name="fascia_${fascia}" value="${team}" id="team_${fascia}_${team.replace(/\s+/g, '_')}" data-fascia="${fascia}" ${checked}>
+                        <label for="team_${fascia}_${team.replace(/\s+/g, '_')}">${team}</label>
+                    </div>`;
+                });
+                html += '</div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Load all users' picks
+        loadAllUsersSelections();
+    }).catch(() => {
+        container.innerHTML = '<div class="empty-state"><p>Accedi per scegliere le tue squadre</p></div>';
+        saveBtn.style.display = 'none';
+        document.getElementById('otherUsersCard').style.display = 'none';
+    });
+}
+
+async function loadAllUsersSelections() {
+    const card = document.getElementById('leaderboardCard');
+    const container = document.getElementById('leaderboardContainer');
+    try {
+        const standings = await API.get('/api/standings');
+        const withTeams = standings.filter(u => Object.keys(u.details || {}).length > 0);
+        if (withTeams.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+        card.style.display = 'block';
+
+        // Find min/max per fascia for color gradient
+        const fasciaPts = {};
+        Object.keys(punteggi).forEach(f => { fasciaPts[f] = []; });
+        withTeams.forEach(u => {
+            Object.entries(u.details || {}).forEach(([f, d]) => {
+                if (fasciaPts[f]) fasciaPts[f].push(d.points);
+            });
+        });
+        const fasciaMin = {}, fasciaMax = {};
+        Object.entries(fasciaPts).forEach(([f, pts]) => {
+            fasciaMin[f] = Math.min(...pts);
+            fasciaMax[f] = Math.max(...pts);
+        });
+
+        function ptColor(points, fascia) {
+            const min = fasciaMin[fascia], max = fasciaMax[fascia];
+            if (max === min) return '#f0c040';
+            const ratio = (points - min) / (max - min);
+            const r = Math.round(255 * (1 - ratio));
+            const g = Math.round(200 * ratio);
+            return `rgb(${r}, ${g}, 60)`;
+        }
+
+        let html = '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>#</th><th>Giocatore</th><th>Totale</th>';
+        Object.entries(punteggi).forEach(([f]) => {
+            html += `<th style="text-align:center;color:#f0c040;font-size:0.8rem;">${f}°</th>`;
+        });
+        html += '</tr></thead><tbody>';
+        withTeams.forEach((u, i) => {
+            const rank = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+            html += `<tr class="${rank}"><td class="pos">${i + 1}</td><td class="name">${u.name}</td><td class="pts">${u.total_points}</td>`;
+            Object.entries(punteggi).forEach(([f]) => {
+                const detail = u.details[f];
+                if (detail) {
+                    const color = ptColor(detail.points, f);
+                    html += `<td style="text-align:center;"><span style="font-size:0.85rem;">${detail.team}</span><br><span style="font-weight:700;color:${color};">${detail.points}pt</span></td>`;
+                } else {
+                    html += `<td style="text-align:center;color:#445;">-</td>`;
+                }
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+    } catch(e) {
+        card.style.display = 'none';
+    }
+}
+
+document.getElementById('saveSelections').onclick = async () => {
+    const selections = {};
+    document.querySelectorAll('#selectionsContainer input[type="radio"]:checked').forEach(input => {
+        selections[input.dataset.fascia] = input.value;
+    });
+    if (Object.keys(selections).length < 6) {
+        showAlert('selectionsAlert', 'Devi scegliere una squadra per ogni fascia!', 'error');
+        return;
+    }
+    try {
+        const res = await API.post('/api/selections', {selections});
+        if (res.locked) {
+            showAlert('selectionsAlert', '✅ Squadra bloccata! Hai finito.', 'success');
+        } else {
+            showAlert('selectionsAlert', 'Selezioni salvate!', 'success');
+        }
+        renderSelections();
+    } catch(e) {
+        showAlert('selectionsAlert', e.message, 'error');
+    }
+};
+
+function showAlert(id, msg, type) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = 'alert ' + type;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+// --- MATCHES ---
+async function loadMatches() {
+    const container = document.getElementById('matchesContainer');
+    const matchday = document.getElementById('matchdayFilter').value;
+    try {
+        const matches = await API.get('/api/matches' + (matchday ? '?matchday=' + matchday : ''));
+        if (matches.length === 0) {
+            container.innerHTML = '<div class="empty-state"><p>Nessuna partita. Usa "Carica risultati" per importarle.</p></div>';
+            return;
+        }
+        let html = '<div class="match-list">';
+        let currentMd = 0;
+        let currentDate = '';
+        matches.forEach(m => {
+            if (m.matchday !== currentMd) {
+                if (currentMd) html += '</div>';
+                currentMd = m.matchday;
+                currentDate = '';
+                html += `<div style="margin:1rem 0 0.5rem;font-weight:700;color:#f0c040;">Giornata ${currentMd}</div>`;
+            }
+            const hs = m.home_score !== null ? m.home_score : '';
+            const as = m.away_score !== null ? m.away_score : '';
+            let dateStr = '';
+            if (m.date) {
+                const d = new Date(m.date);
+                const days = ['dom','lun','mar','mer','gio','ven','sab'];
+                const months = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+                const day = days[d.getUTCDay()];
+                const dd = String(d.getUTCDate()).padStart(2,'0');
+                const mm = months[d.getUTCMonth()];
+                const hh = String(d.getUTCHours()).padStart(2,'0');
+                const mi = String(d.getUTCMinutes()).padStart(2,'0');
+                dateStr = `${day} ${dd} ${mm}, ore ${hh}:${mi}`;
+            }
+            const showDate = dateStr && dateStr !== currentDate;
+            if (dateStr) currentDate = dateStr;
+            html += (showDate ? `<div style="font-size:0.8rem;color:#667;margin:0.5rem 0 0.2rem;">${dateStr}</div>` : '');
+            html += `<div class="match-row" style="${showDate ? '' : ''}">
+                <div class="team home">${m.home_team}</div>
+                <div class="score">
+                    <input type="number" class="score-input" data-match="${m.id}" data-side="home" value="${hs}" min="0" ${currentUser && currentUser.is_admin ? '' : 'disabled'}>
+                    <span class="sep">-</span>
+                    <input type="number" class="score-input" data-match="${m.id}" data-side="away" value="${as}" min="0" ${currentUser && currentUser.is_admin ? '' : 'disabled'}>
+                </div>
+                <div class="team away">${m.away_team}</div>
+            </div>`;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+
+        // auto-save on score change
+        document.querySelectorAll('.score-input').forEach(inp => {
+            inp.addEventListener('change', async () => {
+                const matchId = parseInt(inp.dataset.match);
+                const matchRow = inp.closest('.match-row');
+                const home = matchRow.querySelector('[data-side="home"]').value;
+                const away = matchRow.querySelector('[data-side="away"]').value;
+                if (home !== '' && away !== '') {
+                    try {
+                        await API.post('/api/matches/update-scores', {
+                            match_id: matchId,
+                            home_score: parseInt(home),
+                            away_score: parseInt(away),
+                        });
+                    } catch(e) { console.error(e); }
+                }
+            });
+        });
+    } catch(e) {
+        container.innerHTML = '<div class="alert error">Errore caricamento partite</div>';
+    }
+}
+
+// Save all scores manually
+document.getElementById('saveScoresBtn').onclick = async () => {
+    const inputs = document.querySelectorAll('.score-input');
+    let saved = 0;
+    for (const inp of inputs) {
+        const matchRow = inp.closest('.match-row');
+        const matchId = parseInt(inp.dataset.match);
+        const home = matchRow.querySelector('[data-side="home"]').value;
+        const away = matchRow.querySelector('[data-side="away"]').value;
+        if (home !== '' && away !== '') {
+            try {
+                await API.post('/api/matches/update-scores', {
+                    match_id: matchId,
+                    home_score: parseInt(home),
+                    away_score: parseInt(away),
+                });
+                saved++;
+            } catch(e) {}
+        }
+    }
+    showAlert('fetchAlert', `✅ ${saved} risultati salvati`, 'success');
+};
+
+async function loadMatchdayOptions() {
+    try {
+        const mds = await API.get('/api/matchdays');
+        const selects = ['matchdayFilter', 'calcMatchday'];
+        selects.forEach(id => {
+            const sel = document.getElementById(id);
+            const current = sel.value;
+            sel.innerHTML = '<option value="">Tutte</option>';
+            mds.forEach(md => {
+                sel.innerHTML += `<option value="${md}">Giornata ${md}</option>`;
+            });
+            if (current) sel.value = current;
+        });
+    } catch(e) {}
+}
+
+document.getElementById('fetchResultsBtn').onclick = async () => {
+    const btn = document.getElementById('fetchResultsBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Caricamento...';
+    try {
+        // Timeout 20s per evitare che si blocchi
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
+        const res = await fetch('/api/fetch-results', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Errore sconosciuto');
+        }
+        const data = await res.json();
+        if (data.updated !== undefined) {
+            showAlert('fetchAlert', `✅ Aggiornate ${data.updated} partite su ${data.total}`, 'success');
+            loadMatches();
+        }
+    } catch(e) {
+        if (e.name === 'AbortError') {
+            showAlert('fetchAlert', '❌ Richiesta scaduta (20s). Il server potrebbe essere lento.', 'error');
+        } else if (e.message && e.message.includes('Nessuna API configurata')) {
+            showAlert('fetchAlert',
+                '🔑 Nessuna API configurata. Vai nelle ⚙ Impostazioni qui sotto e incolla il tuo API key gratuito di football-data.org', 'info');
+            document.getElementById('apiKeySection').style.display = 'block';
+        } else {
+            showAlert('fetchAlert', '❌ ' + (e.message || 'Errore'), 'error');
+        }
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔃 Carica risultati';
+    }
+};
+
+// Admin API key config
+document.getElementById('saveApiKey').onclick = async () => {
+    const key = document.getElementById('apiKeyInput').value.trim();
+    if (!key) return;
+    try {
+        await API.post('/api/config', {football_api_key: key});
+        showAlert('fetchAlert', '✅ API key salvata! Ora premi "Carica risultati"', 'success');
+    } catch(e) {
+        showAlert('fetchAlert', 'Errore: ' + e.message, 'error');
+    }
+};
+document.getElementById('clearApiKey').onclick = async () => {
+    await API.post('/api/config', {football_api_key: ''});
+    document.getElementById('apiKeyInput').value = '';
+    showAlert('fetchAlert', 'API key rimossa', 'info');
+};
+
+// Load existing config values on admin login
+async function loadApiConfig() {
+    try {
+        const cfg = await API.get('/api/config');
+        if (cfg.football_api_key) {
+            document.getElementById('apiKeyInput').value = cfg.football_api_key;
+        }
+    } catch(e) {}
+}
+
+// --- CALCULATE ---
+document.getElementById('calcBtn').onclick = async () => {
+    const val = document.getElementById('calcMatchday').value;
+    const matchday = val ? parseInt(val) : null;
+    const container = document.getElementById('calcResults');
+    try {
+        const data = await API.post('/api/calculate-matchday', {matchday});
+        if (data.standings.length === 0) {
+            container.innerHTML = '<div class="empty-state">Nessun partecipante</div>';
+            return;
+        }
+        let html = `<h3>Risultati ${data.matchday ? 'Giornata ' + data.matchday : 'Totali'}</h3>`;
+        html += '<table class="standings-table"><thead><tr><th>#</th><th>Giocatore</th><th>Punti</th></tr></thead><tbody>';
+        data.standings.forEach((s, i) => {
+            const rank = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+            html += `<tr class="${rank}"><td class="pos">${i + 1}</td><td class="name">${s.name}</td><td class="pts">${s.points}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    } catch(e) {
+        container.innerHTML = '<div class="alert error">' + e.message + '</div>';
+    }
+};
+
+document.getElementById('simulateBtn').onclick = async () => {
+    if (!confirm('ATTENZIONE: Questo genererà risultati casuali per TUTTE le partite senza punteggio.\nI risultati esistenti verranno mantenuti, quelli nuovi saranno inventati.\nÈ solo per test! Continuare?')) return;
+    const btn = document.getElementById('simulateBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Simulazione...';
+    try {
+        const res = await API.post('/api/simulate-results');
+        showAlert('fetchAlert', `🎲 Simulati ${res.simulated} risultati casuali. Usa "Calcola" per vedere i punteggi!`, 'info');
+        loadMatches();
+    } catch(e) {
+        showAlert('fetchAlert', '❌ ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🎲 Simula risultati (test)';
+    }
+};
+
+// --- BONUS (winner / runner-up) ---
+function populateBonusDropdowns() {
+    const winnerSel = document.getElementById('bonusWinner');
+    const runnerSel = document.getElementById('bonusRunnerUp');
+    winnerSel.innerHTML = '<option value="">— Seleziona —</option>';
+    runnerSel.innerHTML = '<option value="">— Seleziona —</option>';
+    Object.values(fasce).flat().forEach(team => {
+        winnerSel.innerHTML += `<option value="${team}">${team}</option>`;
+        runnerSel.innerHTML += `<option value="${team}">${team}</option>`;
+    });
+}
+
+async function loadBonusConfig() {
+    try {
+        const cfg = await API.get('/api/config');
+        if (cfg.world_cup_winner) document.getElementById('bonusWinner').value = cfg.world_cup_winner;
+        if (cfg.world_cup_runner_up) document.getElementById('bonusRunnerUp').value = cfg.world_cup_runner_up;
+    } catch(e) {}
+}
+
+document.getElementById('saveBonusBtn').onclick = async () => {
+    const winner = document.getElementById('bonusWinner').value;
+    const runnerUp = document.getElementById('bonusRunnerUp').value;
+    try {
+        await API.post('/api/config', {
+            world_cup_winner: winner || null,
+            world_cup_runner_up: runnerUp || null,
+        });
+        showAlert('bonusAlert', '✅ Bonus salvato! Ricalcola per aggiornare i punteggi.', 'success');
+    } catch(e) {
+        showAlert('bonusAlert', '❌ ' + e.message, 'error');
+    }
+};
+
+// --- GUEST LEADERBOARD ---
+async function loadStandingsForGuests() {
+    const container = document.getElementById('selectionsContainer');
+    const card = document.getElementById('leaderboardCard');
+    container.innerHTML = '<div class="empty-state"><p>Accedi per partecipare! Intanto ecco la classifica:</p></div>';
+    try {
+        const standings = await API.get('/api/standings');
+        const withTeams = standings.filter(u => Object.keys(u.details || {}).length > 0);
+        if (withTeams.length === 0) { card.style.display = 'none'; return; }
+        card.style.display = 'block';
+        const fasciaPts = {};
+        Object.keys(punteggi).forEach(f => { fasciaPts[f] = []; });
+        withTeams.forEach(u => Object.entries(u.details || {}).forEach(([f, d]) => { if (fasciaPts[f]) fasciaPts[f].push(d.points); }));
+        const fasciaMin = {}, fasciaMax = {};
+        Object.entries(fasciaPts).forEach(([f, pts]) => { fasciaMin[f] = Math.min(...pts); fasciaMax[f] = Math.max(...pts); });
+        function ptColor(points, fascia) {
+            const min = fasciaMin[fascia], max = fasciaMax[fascia];
+            if (max === min) return '#f0c040';
+            const ratio = (points - min) / (max - min);
+            return 'rgb(' + Math.round(255 * (1 - ratio)) + ',' + Math.round(200 * ratio) + ',60)';
+        }
+        let html = '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>#</th><th>Giocatore</th><th>Totale</th>';
+        Object.entries(punteggi).forEach(([f]) => { html += '<th style="text-align:center;color:#f0c040;font-size:0.8rem;">' + f + '°</th>'; });
+        html += '</tr></thead><tbody>';
+        withTeams.forEach((u, i) => {
+            const rank = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+            html += '<tr class="' + rank + '"><td class="pos">' + (i + 1) + '</td><td class="name">' + u.name + '</td><td class="pts">' + u.total_points + '</td>';
+            Object.entries(punteggi).forEach(([f]) => {
+                const detail = u.details[f];
+                if (detail) html += '<td style="text-align:center;"><span style="font-size:0.85rem;">' + detail.team + '</span><br><span style="font-weight:700;color:' + ptColor(detail.points, f) + ';">' + detail.points + 'pt</span></td>';
+                else html += '<td style="text-align:center;color:#445;">-</td>';
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        document.getElementById('leaderboardContainer').innerHTML = html;
+    } catch(e) { card.style.display = 'none'; }
+}
+
+// --- ADMIN USER MANAGEMENT ---
+async function loadAdminUsers() {
+    const container = document.getElementById('adminUsersContainer');
+    try {
+        const users = await API.get('/api/admin/users');
+        let html = '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>Utente</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>';
+        for (const u of users) {
+            const status = u.disabled ? '\u{1F534} Disabilitato' : u.has_selections ? '\u2705 Attivo' : '\u23F3 In attesa';
+            const toggleLabel = u.disabled ? 'Riabilita' : 'Disabilita';
+            html += '<tr><td class="name">' + u.name + '</td><td>' + status + '</td><td>'
+                + '<button class="btn secondary" style="padding:0.3rem 0.8rem;font-size:0.8rem;" onclick="resetPw(' + u.id + ')">\u{1F511} Password</button> '
+                + '<button class="btn secondary" style="padding:0.3rem 0.8rem;font-size:0.8rem;" onclick="toggleDisable(' + u.id + ',' + u.disabled + ')">' + toggleLabel + '</button>'
+                + '</td></tr>';
+        }
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+    } catch(e) { container.innerHTML = '<div class="alert error">' + e.message + '</div>'; }
+}
+
+async function resetPw(userId) {
+    const pw = prompt('Nuova password per questo utente:');
+    if (!pw || pw.length < 2) return;
+    try { await API.post('/api/admin/users/' + userId + '/reset-password', {password: pw}); alert('Password aggiornata!'); }
+    catch(e) { alert('Errore: ' + e.message); }
+}
+
+async function toggleDisable(userId, currentlyDisabled) {
+    if (!confirm(currentlyDisabled ? 'Riabilitare questo utente?' : 'Disabilitare questo utente? I suoi dati rimarranno.')) return;
+    try { await API.post('/api/admin/users/' + userId + '/toggle-disable'); loadAdminUsers(); }
+    catch(e) { alert('Errore: ' + e.message); }
+}
+
+// TAB SYNC
+document.querySelectorAll('nav button[data-section]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (btn.dataset.section === 'matches') loadMatches();
+        if (btn.dataset.section === 'users') loadAdminUsers();
+    });
+});
+
+// --- INIT ---
+checkSession();
+</script>
+</body>
+</html>
