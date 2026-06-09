@@ -110,7 +110,11 @@ MATCHES = [
 
 def seed():
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+        except Exception as e:
+            print(f"DB non ancora pronto: {e}. Riproverà al primo avvio.")
+            return
 
         if Match.query.first():
             print("Database già popolato. Salto seed.")
