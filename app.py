@@ -245,7 +245,7 @@ def get_standings():
             details[str(s.fascia)] = {"team": s.team_name, "points": pts}
         result.append({
             "user_id": user.id,
-            "name": user.name,
+            "name": user.display_name(),
             "total_points": total,
             "details": details,
         })
@@ -271,7 +271,7 @@ def calculate_matchday():
         total = 0
         for s in user.selections:
             total += s.points(matchday)
-        standings.append({"user_id": user.id, "name": user.name, "points": total})
+        standings.append({"user_id": user.id, "name": user.display_name(), "points": total})
 
     standings.sort(key=lambda x: x["points"], reverse=True)
     return jsonify({"matchday": matchday, "standings": standings})
@@ -289,7 +289,7 @@ def full_leaderboard():
             details[str(s.fascia)] = {"team": s.team_name, "points": pts}
         result.append({
             "user_id": user.id,
-            "name": user.name,
+            "name": user.display_name(),
             "total_points": total,
             "details": details,
         })
@@ -465,6 +465,7 @@ def admin_get_users():
     return jsonify([{
         "id": u.id,
         "name": u.name,
+        "alias": u.alias,
         "disabled": u.disabled,
         "locked": u.locked,
         "has_selections": len(u.selections) > 0,
@@ -499,6 +500,20 @@ def admin_toggle_disable(user_id):
     user.disabled = not user.disabled
     db.session.commit()
     return jsonify({"ok": True, "disabled": user.disabled})
+
+
+@app.route("/api/admin/users/<int:user_id>/set-alias", methods=["POST"])
+def admin_set_alias(user_id):
+    if not admin_required():
+        return jsonify({"error": "Solo admin"}), 403
+    data = request.get_json()
+    alias = data.get("alias", "").strip() or None
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "Utente non trovato"}), 404
+    user.alias = alias
+    db.session.commit()
+    return jsonify({"ok": True, "alias": alias})
 
 
 @app.route("/api/admin/users/<int:user_id>/reset-selections", methods=["POST"])

@@ -1106,11 +1106,13 @@ async function loadAdminUsers() {
     const container = document.getElementById('adminUsersContainer');
     try {
         const users = await API.get('/api/admin/users');
-        let html = '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>Utente</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>';
+        let html = '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>Utente</th><th>Alias</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>';
         for (const u of users) {
             const status = u.disabled ? '\u{1F534} Disabilitato' : u.has_selections ? '\u2705 Attivo' : '\u23F3 In attesa';
             const toggleLabel = u.disabled ? 'Riabilita' : 'Disabilita';
-            html += '<tr><td class="name">' + u.name + '</td><td>' + status + '</td><td>'
+            const aliasDisplay = u.alias || '<span style="color:#445;">—</span>';
+            html += '<tr><td class="name">' + u.name + '</td><td>' + aliasDisplay + '</td><td>' + status + '</td><td>'
+                + '<button class="btn secondary" style="padding:0.3rem 0.8rem;font-size:0.8rem;" onclick="setAlias(' + u.id + ')">\u{1F3F7} Alias</button> '
                 + '<button class="btn secondary" style="padding:0.3rem 0.8rem;font-size:0.8rem;" onclick="resetPw(' + u.id + ')">\u{1F511} Password</button> '
                 + '<button class="btn secondary" style="padding:0.3rem 0.8rem;font-size:0.8rem;" onclick="resetSelections(' + u.id + ')">\u{1F504} Reset Squadra</button> '
                 + '<button class="btn secondary" style="padding:0.3rem 0.8rem;font-size:0.8rem;" onclick="toggleDisable(' + u.id + ',' + u.disabled + ')">' + toggleLabel + '</button>'
@@ -1119,6 +1121,13 @@ async function loadAdminUsers() {
         html += '</tbody></table></div>';
         container.innerHTML = html;
     } catch(e) { container.innerHTML = '<div class="alert error">' + e.message + '</div>'; }
+}
+
+async function setAlias(userId) {
+    const alias = prompt('Inserisci alias (etichetta) per questo utente:\nSarà visibile in classifica accanto al nome.\nLascia vuoto per rimuovere.');
+    if (alias === null) return;
+    try { await API.post('/api/admin/users/' + userId + '/set-alias', {alias: alias}); loadAdminUsers(); }
+    catch(e) { alert('Errore: ' + e.message); }
 }
 
 async function resetPw(userId) {

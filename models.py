@@ -63,6 +63,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     instance = db.Column(db.String(50), nullable=False, default="default")
     name = db.Column(db.String(100), nullable=False)
+    alias = db.Column(db.String(100), nullable=True)
     password_hash = db.Column(db.String(256), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     locked = db.Column(db.Boolean, default=False)
@@ -72,6 +73,9 @@ class User(db.Model):
     __table_args__ = (db.UniqueConstraint("instance", "name"),)
 
     selections = db.relationship("Selection", backref="user", lazy=True)
+
+    def display_name(self):
+        return f"{self.name} ({self.alias})" if self.alias else self.name
 
     def team_by_fascia(self):
         result = {}
