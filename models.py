@@ -75,7 +75,10 @@ class User(db.Model):
     selections = db.relationship("Selection", backref="user", lazy=True)
 
     def display_name(self):
-        return f"{self.name} ({self.alias})" if self.alias else self.name
+        try:
+            return f"{self.name} ({self.alias})" if self.alias else self.name
+        except Exception:
+            return self.name
 
     def team_by_fascia(self):
         result = {}

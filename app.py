@@ -33,6 +33,20 @@ INSTANCE = os.environ.get("INSTANCE", "default")
 
 with app.app_context():
     db.create_all()
+    # Migrate: add missing columns (SQLAlchemy create_all doesn't alter existing tables)
+    for table, col, col_type in [
+        ("user", "alias", "VARCHAR(100)"),
+        ("user", "instance", "VARCHAR(50)"),
+        ("match", "instance", "VARCHAR(50)"),
+        ("config", "instance", "VARCHAR(50)"),
+    ]:
+        try:
+            db.session.execute(db.text(
+                f'ALTER TABLE "{table}" ADD COLUMN IF NOT EXISTS "{col}" {col_type}'
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
 
 @app.route("/")
