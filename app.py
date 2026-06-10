@@ -24,6 +24,11 @@ db.init_app(app)
 # Ensure data directory exists for SQLite
 os.makedirs(os.path.join(os.path.dirname(__file__), "data"), exist_ok=True)
 
+# First match: 11 giugno 2026, ore 21:00 italiane (UTC+2 = 19:00 UTC)
+from datetime import timezone
+FIRST_MATCH = datetime(2026, 6, 11, 19, 0, tzinfo=timezone.utc)
+REGISTRATION_OPEN = datetime.now(timezone.utc) < FIRST_MATCH
+
 INSTANCE = os.environ.get("INSTANCE", "default")
 
 with app.app_context():
@@ -33,6 +38,14 @@ with app.app_context():
 @app.route("/")
 def index():
     return render_template("index.html", fasce=FASCE, punteggi=PUNTEGGI)
+
+
+@app.route("/api/registration-status")
+def registration_status():
+    return jsonify({
+        "open": REGISTRATION_OPEN,
+        "first_match": FIRST_MATCH.isoformat(),
+    })
 
 
 @app.route("/api/users", methods=["GET"])
@@ -52,6 +65,8 @@ def check_user():
 
 @app.route("/api/users", methods=["POST"])
 def create_user():
+    if not REGISTRATION_OPEN:
+        return jsonify({"error": "Iscrizioni chiuse! La prima partita è già iniziata."}), 403
     data = request.get_json()
     name = data.get("name", "").strip()
     password = data.get("password", "").strip()
@@ -126,6 +141,8 @@ def selections():
         return jsonify({"error": "Utente non trovato"}), 404
     if user.locked:
         return jsonify({"error": "Bloccata! Non puoi più modificare le squadre."}), 403
+    if not REGISTRATION_OPEN:
+        return jsonify({"error": "Tempo scaduto! La prima partita è già iniziata."}), 403
 
     selections = data.get("selections", {})
     for fascia_str, team in selections.items():
@@ -216,7 +233,7 @@ def update_scores():
 
 @app.route("/api/standings")
 def get_standings():
-    users = User.query.filter_by(instance=INSTANCE).all()
+    users = User.query.filter_by(instance=INSTANCE, disabled=False).all()
     matchday = request.args.get("matchday", type=int)
     result = []
     for user in users:
@@ -249,7 +266,7 @@ def calculate_matchday():
     matchday = data.get("matchday")
 
     standings = []
-    users = User.query.filter_by(instance=INSTANCE).all()
+    users = User.query.filter_by(instance=INSTANCE, disabled=False).all()
     for user in users:
         total = 0
         for s in user.selections:
