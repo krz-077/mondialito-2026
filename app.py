@@ -247,6 +247,11 @@ def update_scores():
 
 def try_live_fetch():
     """Tenta di fetchare risultati live dall'API se configurata. Solo se ci sono partite senza punteggio già iniziate."""
+    # Check if live is enabled by admin (default: enabled)
+    live_cfg = Config.query.filter_by(instance=INSTANCE, key="live_enabled").first()
+    if live_cfg and live_cfg.value != "1":
+        return
+
     import requests as req
     api_key_cfg = Config.query.filter_by(instance=INSTANCE, key="football_api_key").first()
 
