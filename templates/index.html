@@ -276,14 +276,6 @@ footer {
 
 <div id="countdownBanner" style="display:none;text-align:center;padding:0.8rem 1rem;background:linear-gradient(135deg,#1a3a1a,#2a5a2a);border-bottom:2px solid #3a7a3a;font-weight:700;"></div>
 
-<div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.4rem 1rem;background:#0f1638;border-bottom:1px solid #2a3a5a;">
-    <label style="color:#889;cursor:pointer;display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;">
-        <input type="checkbox" id="liveToggle" style="accent-color:#f0c040;width:16px;height:16px;cursor:pointer;">
-        <span id="liveLabel">🔴 Classifica live</span>
-    </label>
-    <span id="liveStatus" style="font-size:0.75rem;color:#667;"></span>
-</div>
-
 <div class="container">
 
 <!-- LOGIN MODAL -->
@@ -404,7 +396,11 @@ footer {
 
         <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #2a3a5a;">
             <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-
+                <label style="color:#889;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
+                    <input type="checkbox" id="liveToggle" style="accent-color:#f0c040;width:18px;height:18px;cursor:pointer;">
+                    <span id="liveLabel">🔴 Classifica live per tutti</span>
+                </label>
+                <span id="liveStatus" style="font-size:0.8rem;color:#667;"></span>
             </div>
         </div>
     </div>
@@ -1210,50 +1206,38 @@ let liveInterval = null;
 
 function startLiveAutoRefresh() {
     const toggle = document.getElementById('liveToggle');
-    // Carica preferenza salvata, default true
-    const saved = localStorage.getItem('liveEnabled');
-    const enabled = saved !== null ? saved === 'true' : true;
-    toggle.checked = enabled;
-
-    if (enabled) {
-        doLiveRefresh();
-        if (liveInterval) clearInterval(liveInterval);
-        liveInterval = setInterval(doLiveRefresh, 30000);
-    } else {
-        const ls = document.getElementById('liveStatus');
-        const ll = document.getElementById('liveLabel');
-        if (ls) ls.textContent = '⏸ Spento';
-        if (ll) ll.textContent = '⏸ Classifica live';
-    }
+    fetch('/api/live-toggle').then(r => r.json()).then(cfg => {
+        const enabled = cfg.enabled;
+        if (toggle) {
+            toggle.checked = enabled;
+            toggle.onchange = function() {
+                const en = this.checked;
+                fetch('/api/live-toggle', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({enabled: en})});
+                applyLiveState(en);
+            };
+        }
+        applyLiveState(enabled);
+    }).catch(() => {});
 }
 
-document.getElementById('liveToggle').onchange = function() {
+function applyLiveState(enabled) {
+    const toggle = document.getElementById('liveToggle');
     const status = document.getElementById('liveStatus');
     const label = document.getElementById('liveLabel');
-    localStorage.setItem('liveEnabled', this.checked);
-    if (this.checked) {
-        label.textContent = '🔴 Classifica live';
-        status.textContent = '🟢 Live';
-        doLiveRefresh();
-        liveInterval = setInterval(doLiveRefresh, 30000);
-        // Pausa quando il tab non è visibile (non tiene sveglio Render)
-        document.addEventListener('visibilitychange', onLiveVisibility);
-    } else {
-        label.textContent = '⏸ Classifica live';
-        status.textContent = '⏸ Spento';
-        if (liveInterval) { clearInterval(liveInterval); liveInterval = null; }
-        document.removeEventListener('visibilitychange', onLiveVisibility);
-    }
-};
-
-function onLiveVisibility() {
-    if (document.hidden) {
-        if (liveInterval) { clearInterval(liveInterval); liveInterval = null; }
-    } else {
-        if (document.getElementById('liveToggle').checked && !liveInterval) {
-            doLiveRefresh();
-            liveInterval = setInterval(doLiveRefresh, 30000);
+    if (toggle) {
+        if (enabled) {
+            label.textContent = '🔴 Classifica live per tutti';
+            status.textContent = '🟢 Attiva';
+        } else {
+            label.textContent = '⏸ Classifica live per tutti';
+            status.textContent = '⏸ Disattivata';
         }
+    }
+    if (enabled) {
+        doLiveRefresh();
+        if (!liveInterval) liveInterval = setInterval(doLiveRefresh, 30000);
+    } else {
+        if (liveInterval) { clearInterval(liveInterval); liveInterval = null; }
     }
 }
 
@@ -1263,22 +1247,13 @@ async function doLiveRefresh() {
         if (res.ok) {
             const leaderboardCard = document.getElementById('leaderboardCard');
             if (leaderboardCard && leaderboardCard.style.display !== 'none') {
-                if (currentUser) {
-                    loadAllUsersSelections();
-                } else {
-                    loadStandingsForGuests();
-                }
+                if (currentUser) loadAllUsersSelections();
+                else loadStandingsForGuests();
             }
             const matchesSection = document.getElementById('section-matches');
-            if (matchesSection && matchesSection.classList.contains('active')) {
-                loadMatches();
-            }
+            if (matchesSection && matchesSection.classList.contains('active')) loadMatches();
         }
     } catch(e) {}
-    const ls = document.getElementById('liveStatus');
-    const ll = document.getElementById('liveLabel');
-    if (ls) ls.textContent = '🟢 Live';
-    if (ll) ll.textContent = '🔴 Classifica live';
 }
 </script>
 </body>

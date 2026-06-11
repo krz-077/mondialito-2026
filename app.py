@@ -506,6 +506,29 @@ def fetch_results():
     }), 400
 
 
+@app.route("/api/live-toggle", methods=["GET", "POST"])
+def live_toggle():
+    if request.method == "POST":
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Non autenticato"}), 401
+        user = db.session.get(User, user_id)
+        if not user or not user.is_admin:
+            return jsonify({"error": "Solo admin"}), 403
+        data = request.get_json()
+        enabled = data.get("enabled", True)
+        cfg = Config.query.filter_by(instance=INSTANCE, key="live_enabled").first()
+        if cfg:
+            cfg.value = "1" if enabled else "0"
+        else:
+            db.session.add(Config(instance=INSTANCE, key="live_enabled", value="1" if enabled else "0"))
+        db.session.commit()
+        return jsonify({"enabled": enabled})
+
+    cfg = Config.query.filter_by(instance=INSTANCE, key="live_enabled").first()
+    return jsonify({"enabled": cfg.value == "1" if cfg else True})
+
+
 @app.route("/api/config", methods=["GET", "POST"])
 def config():
     if request.method == "GET":
