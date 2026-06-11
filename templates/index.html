@@ -862,7 +862,7 @@ async function loadMatchFeedAtIdx(idx) {
             renderMatchFeed(m, teamUsers, currentIdx, allMatches.length, container);
         } catch(e) { /* standings fallback: ok, mostra senza giocatori */ }
     } catch(e) {
-        container.innerHTML = '<div style="text-align:center;padding:1rem;color:#667;">Caricamento partite...</div>';
+        container.innerHTML = '<div style="text-align:center;padding:1rem;color:#667;">Caricamento partite... (' + (e.message || 'errore') + ')</div>';
     }
 }
 
