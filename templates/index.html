@@ -882,7 +882,7 @@ function renderMatchFeed(matches, teamUsers, currentIdx, container) {
     let html = '';
 
     if (isDone) {
-        html += '<div style="background:#0f1838;border:1px solid #2a3a5a;border-radius:10px;padding:1rem;">';
+        html += '<div style="background:#111a40;border:1px solid #2a3a6a;border-radius:16px;padding:1.2rem;">';
         html += '<div style="font-size:0.8rem;color:#889;margin-bottom:0.3rem;">' + dateStr(m.date) + ' · \u26BD Partita giocata</div>';
         html += '<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin:0.5rem 0;">';
         html += '<span style="font-size:1.1rem;font-weight:700;">' + m.home_team + '</span>';
@@ -894,14 +894,23 @@ function renderMatchFeed(matches, teamUsers, currentIdx, container) {
         allPlayers.forEach(p => { if (!playerPts[p.name]) playerPts[p.name] = 0; playerPts[p.name] += p.points; });
         const sorted = Object.entries(playerPts).sort((a, b) => b[1] - a[1]);
         if (sorted.length) {
-            html += '<div style="font-size:0.85rem;color:#889;text-align:center;">Punti: ';
-            html += sorted.map(([name, pts]) => '<span style="font-weight:600;color:#f0c040;">' + name + ' +' + pts + '</span>').join(' \u00B7 ');
-            html += '</div>';
+            html += '<div style="font-size:0.85rem;color:#889;margin-top:0.5rem;">Punti:</div>';
+            // Per team
+            if (homePlayers.length) {
+                html += '<div style="font-size:0.85rem;margin-top:0.2rem;"><span style="color:#c8d0e0;">🏠 ' + m.home_team + ':</span> ';
+                html += homePlayers.sort((a,b) => a.name.localeCompare(b.name, 'it', {sensitivity:'base'})).map(p => '<span style="font-weight:600;color:#f0c040;">' + p.name + ' +' + p.points + '</span>').join(', ');
+                html += '</div>';
+            }
+            if (awayPlayers.length) {
+                html += '<div style="font-size:0.85rem;margin-top:0.2rem;"><span style="color:#c8d0e0;">✈ ' + m.away_team + ':</span> ';
+                html += awayPlayers.sort((a,b) => a.name.localeCompare(b.name, 'it', {sensitivity:'base'})).map(p => '<span style="font-weight:600;color:#f0c040;">' + p.name + ' +' + p.points + '</span>').join(', ');
+                html += '</div>';
+            }
         }
         html += '</div>';
     } else {
-        html += '<div style="background:linear-gradient(135deg,#1a2a1a,#2a4a2a);border:1px solid #3a6a3a;border-radius:10px;padding:1rem;">';
-        html += '<div style="font-size:0.8rem;color:#8c8;margin-bottom:0.3rem;">\u23ED PROSSIMA PARTITA</div>';
+        html += '<div style="background:#111a40;border:1px solid #2a3a6a;border-radius:16px;padding:1.2rem;">';
+        html += '<div style="font-size:0.8rem;color:#f0c040;margin-bottom:0.3rem;font-weight:600;">⏭ PROSSIMA PARTITA</div>';
         html += '<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin:0.5rem 0;">';
         html += '<span style="font-size:1.1rem;font-weight:700;">' + m.home_team + '</span>';
         html += '<span style="font-size:1.5rem;font-weight:800;color:#667;">vs</span>';
@@ -909,8 +918,13 @@ function renderMatchFeed(matches, teamUsers, currentIdx, container) {
         html += '</div>';
         html += '<div style="text-align:center;font-size:0.85rem;color:#889;">' + dateStr(m.date) + '</div>';
         if (allInvolved.length > 0) {
-            html += '<div style="font-size:0.85rem;color:#889;text-align:center;margin-top:0.3rem;">In campo: ';
-            html += allInvolved.map(n => '<span style="color:#8c8;">' + n + '</span>').join(', ');
+            html += '<div style="font-size:0.85rem;color:#889;margin-top:0.5rem;">';
+            html += '<div><span style="color:#c8d0e0;">🏠 ' + m.home_team + ':</span> ';
+            html += (homePlayers.length ? homePlayers.sort((a,b) => a.name.localeCompare(b.name, 'it', {sensitivity:'base'})).map(p => '<span style="color:#8c8;">' + p.name + '</span>').join(', ') : '<span style="color:#445;">nessuno</span>');
+            html += '</div>';
+            html += '<div style="margin-top:0.2rem;"><span style="color:#c8d0e0;">✈ ' + m.away_team + ':</span> ';
+            html += (awayPlayers.length ? awayPlayers.sort((a,b) => a.name.localeCompare(b.name, 'it', {sensitivity:'base'})).map(p => '<span style="color:#8c8;">' + p.name + '</span>').join(', ') : '<span style="color:#445;">nessuno</span>');
+            html += '</div>';
             html += '</div>';
         }
         html += '</div>';
