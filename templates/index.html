@@ -818,7 +818,6 @@ async function loadAllUsersSelections() {
 }
 
 // --- MATCH FEED ---
-let _matchFeedTotal = 0;
 let _feedStandings = null;
 
 async function loadMatchFeed() {
@@ -829,30 +828,11 @@ async function loadMatchFeed() {
 async function loadMatchFeedAtIdx(idx) {
     const container = document.getElementById('matchFeedContainer');
     try {
-        // Get total count (lightweight, no data)
-        const info = await API.get('/api/match-feed');
-        const total = info.total;
-        if (!total) { container.innerHTML = ''; return; }
-
-        // Find current index if not specified
-        const now = new Date();
-        let currentIdx = idx !== undefined ? idx : 0;
-        if (idx === undefined) {
-            // Scan to find the right match - fetch in batches
-            for (let i = 0; i < total; i++) {
-                const m = await API.get('/api/match-feed?idx=' + i);
-                if (!m.match) continue;
-                const d = new Date(m.match.date);
-                if (d <= now && m.match.home_score === null) { currentIdx = i; break; }
-                if (d > now) { currentIdx = Math.max(0, i - 1); break; }
-                currentIdx = i;
-            }
-        }
-
-        // Fetch the current match
-        const matchData = await API.get('/api/match-feed?idx=' + currentIdx);
-        if (!matchData.match) { container.innerHTML = ''; return; }
-        const m = matchData.match;
+        // Fetch all matches in one call (rapido, payload piccolo ~5KB, cached 5s)
+        let allMatches = await API.get('/api/matches');
+        if (!allMatches.length) { container.innerHTML = ''; return; }
+        // Sort by date
+        allMatches.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
         // Get standings once and cache
         if (!_feedStandings) {
@@ -868,7 +848,20 @@ async function loadMatchFeedAtIdx(idx) {
             });
         });
 
-        renderMatchFeed(m, teamUsers, currentIdx, total, container);
+        // Find current index if not specified
+        const now = new Date();
+        let currentIdx = idx !== undefined ? idx : 0;
+        if (idx === undefined) {
+            for (let i = 0; i < allMatches.length; i++) {
+                const d = new Date(allMatches[i].date);
+                if (d <= now && allMatches[i].home_score === null) { currentIdx = i; break; }
+                if (d > now) { currentIdx = Math.max(0, i - 1); break; }
+                currentIdx = i;
+            }
+        }
+
+        currentIdx = Math.max(0, Math.min(currentIdx, allMatches.length - 1));
+        renderMatchFeed(allMatches[currentIdx], teamUsers, currentIdx, allMatches.length, container);
     } catch(e) {
         container.innerHTML = '';
     }
