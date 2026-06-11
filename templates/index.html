@@ -878,6 +878,7 @@ function renderMatchFeed(m, teamUsers, currentIdx, total, container) {
     const homePlayers = teamUsers[m.home_team] || [];
     const awayPlayers = teamUsers[m.away_team] || [];
     const allInvolved = [...new Set([...homePlayers.map(p => p.name), ...awayPlayers.map(p => p.name)])];
+    const isDone = m.home_score !== null;
 
     let html = '';
 
