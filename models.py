@@ -98,6 +98,7 @@ class Selection(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     fascia = db.Column(db.Integer, nullable=False)
     team_name = db.Column(db.String(100), nullable=False)
+    points_cache = db.Column(db.Integer, default=0)
 
     __table_args__ = (db.UniqueConstraint("user_id", "fascia"),)
 
@@ -132,15 +133,21 @@ class Selection(db.Model):
         return pts
 
     def points(self, matchday=None):
-        pts = self.puntos(matchday)
         if matchday is None:
-            winner_cfg = Config.query.filter_by(instance=self._inst, key="world_cup_winner").first()
-            runner_cfg = Config.query.filter_by(instance=self._inst, key="world_cup_runner_up").first()
-            if winner_cfg and self.team_name == winner_cfg.value:
-                pts += 10
-            if runner_cfg and self.team_name == runner_cfg.value:
-                pts += 5
+            pts = self.points_cache
+        else:
+            pts = self.puntos(matchday)
+        winner_cfg = Config.query.filter_by(instance=self._inst, key="world_cup_winner").first()
+        runner_cfg = Config.query.filter_by(instance=self._inst, key="world_cup_runner_up").first()
+        if winner_cfg and self.team_name == winner_cfg.value:
+            pts += 10
+        if runner_cfg and self.team_name == runner_cfg.value:
+            pts += 5
         return pts
+
+    def update_cache(self):
+        self.points_cache = self.puntos()
+        return self.points_cache
 
 
 class Match(db.Model):
@@ -161,3 +168,13 @@ class Config(db.Model):
     value = db.Column(db.String(500), nullable=True)
 
     __table_args__ = (db.UniqueConstraint("instance", "key"),)
+
+
+def recalc_team_cache(team_name, instance):
+    """Recalcola il cache punteggi per tutte le selezioni di una squadra."""
+    for sel in Selection.query.join(User).filter(
+        Selection.team_name == team_name,
+        User.instance == instance,
+    ).all():
+        sel.update_cache()
+    db.session.commit()

@@ -3,7 +3,7 @@ import sys
 from flask import (
     Flask, render_template, request, jsonify, redirect, url_for, session
 )
-from models import db, User, Selection, Match, Config, FASCE, PUNTEGGI, TEAM_FASCIA, get_fascia
+from models import db, User, Selection, Match, Config, FASCE, PUNTEGGI, TEAM_FASCIA, get_fascia, recalc_team_cache
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -49,6 +49,7 @@ with app.app_context():
         ("user", "instance", "VARCHAR(50)"),
         ("match", "instance", "VARCHAR(50)"),
         ("config", "instance", "VARCHAR(50)"),
+        ("selection", "points_cache", "INTEGER DEFAULT 0"),
     ]:
         try:
             db.session.execute(db.text(
@@ -283,6 +284,9 @@ def update_scores():
     match.home_score = home_score
     match.away_score = away_score
     db.session.commit()
+    # Aggiorna cache punteggi per le squadre coinvolte
+    recalc_team_cache(match.home_team, INSTANCE)
+    recalc_team_cache(match.away_team, INSTANCE)
     return jsonify({"ok": True})
 
 
@@ -343,6 +347,7 @@ def try_live_fetch():
             return
         data = r.json()
         updated = 0
+        teams_updated = set()
         for m in data.get("matches", []):
             home_name = m.get("homeTeam", {}).get("name")
             away_name = m.get("awayTeam", {}).get("name")
@@ -360,8 +365,12 @@ def try_live_fetch():
                 match.home_score = score["fullTime"]["home"]
                 match.away_score = score["fullTime"]["away"]
                 updated += 1
+                teams_updated.add(match.home_team)
+                teams_updated.add(match.away_team)
         if updated:
             db.session.commit()
+            for team in teams_updated:
+                recalc_team_cache(team, INSTANCE)
     except Exception:
         pass
 
@@ -710,12 +719,16 @@ def simulate_results():
 
     import random
     matches = Match.query.filter(Match.instance == INSTANCE, Match.home_score.is_(None)).all()
-    count = len(matches)
+    teams_updated = set()
     for m in matches:
         m.home_score = random.randint(0, 4)
         m.away_score = random.randint(0, 4)
+        teams_updated.add(m.home_team)
+        teams_updated.add(m.away_team)
     db.session.commit()
-    return jsonify({"ok": True, "simulated": count})
+    for team in teams_updated:
+        recalc_team_cache(team, INSTANCE)
+    return jsonify({"ok": True, "simulated": len(matches)})
 
 
 if __name__ == "__main__":
