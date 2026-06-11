@@ -292,53 +292,48 @@ def update_scores():
 
 def try_live_fetch():
     """Tenta di fetchare risultati live dall'API se configurata. Solo se ci sono partite senza punteggio già iniziate."""
-    # Cache: non fetcha più di una volta ogni 15s
-    ck = f"live_fetch_{INSTANCE}"
-    if cache_get(ck):
-        return
-    cache_set(ck, True, 15)
+    try:
+        ck = f"live_fetch_{INSTANCE}"
+        if cache_get(ck):
+            return
+        cache_set(ck, True, 15)
 
-    # Check if live is enabled by admin (default: enabled)
-    live_cfg = Config.query.filter_by(instance=INSTANCE, key="live_enabled").first()
-    if live_cfg and live_cfg.value != "1":
-        return
+        live_cfg = Config.query.filter_by(instance=INSTANCE, key="live_enabled").first()
+        if live_cfg and live_cfg.value != "1":
+            return
 
-    import requests as req
-    api_key_cfg = Config.query.filter_by(instance=INSTANCE, key="football_api_key").first()
+        import requests as req
+        api_key_cfg = Config.query.filter_by(instance=INSTANCE, key="football_api_key").first()
 
-    # Test mode: simula risultati senza chiamare API esterna
-    if os.environ.get("LIVE_TEST_MODE") == "1":
-        import random
+        if os.environ.get("LIVE_TEST_MODE") == "1":
+            import random
+            pending = Match.query.filter(
+                Match.instance == INSTANCE,
+                Match.date.isnot(None),
+                Match.home_score.is_(None),
+            ).limit(2).all()
+            if not pending:
+                return
+            for m in pending:
+                m.home_score = random.randint(0, 3)
+                m.away_score = random.randint(0, 3)
+            db.session.commit()
+            return
+
+        if not api_key_cfg or not api_key_cfg.value:
+            return
+
+        from datetime import timedelta
+        now_it = datetime.now(timezone.utc) + timedelta(hours=2)
         pending = Match.query.filter(
             Match.instance == INSTANCE,
             Match.date.isnot(None),
+            Match.date < now_it,
             Match.home_score.is_(None),
-        ).limit(2).all()  # 2 partite a ciclo per simulare partite che finiscono
-        if not pending:
+        ).count()
+        if pending == 0:
             return
-        for m in pending:
-            m.home_score = random.randint(0, 3)
-            m.away_score = random.randint(0, 3)
-        db.session.commit()
-        return
 
-    if not api_key_cfg or not api_key_cfg.value:
-        return
-
-    # Check if there are unplayed matches whose scheduled time has passed
-    # Match dates are stored in Italian time (UTC+2)
-    from datetime import timedelta
-    now_it = datetime.now(timezone.utc) + timedelta(hours=2)
-    pending = Match.query.filter(
-        Match.instance == INSTANCE,
-        Match.date.isnot(None),
-        Match.date < now_it,
-        Match.home_score.is_(None),
-    ).count()
-    if pending == 0:
-        return  # Nessuna partita da aggiornare
-
-    try:
         r = req.get(
             "https://api.football-data.org/v4/competitions/2000/matches",
             headers={"X-Auth-Token": api_key_cfg.value}, timeout=10
