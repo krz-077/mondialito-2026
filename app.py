@@ -31,6 +31,16 @@ REGISTRATION_OPEN = datetime.now(timezone.utc) < FIRST_MATCH
 
 INSTANCE = os.environ.get("INSTANCE", "default")
 
+# Simple in-memory cache (15s TTL)
+_cache = {}
+def cache_get(key):
+    val = _cache.get(key)
+    if val and val["ttl"] > datetime.now(timezone.utc):
+        return val["data"]
+    return None
+def cache_set(key, data, ttl_seconds=15):
+    _cache[key] = {"data": data, "ttl": datetime.now(timezone.utc).timestamp() + ttl_seconds}
+
 with app.app_context():
     db.create_all()
     # Migrate: add missing columns (SQLAlchemy create_all doesn't alter existing tables)
@@ -176,12 +186,17 @@ def selections():
 
 @app.route("/api/matches", methods=["GET"])
 def get_matches():
+    cache_key = f"matches_{INSTANCE}_{request.args.get('matchday', 'all')}"
+    cached = cache_get(cache_key)
+    if cached:
+        return jsonify(cached)
+
     matchday = request.args.get("matchday", type=int)
     query = Match.query.filter_by(instance=INSTANCE)
     if matchday:
         query = query.filter(Match.matchday == matchday)
     matches = query.order_by(Match.matchday, Match.date, Match.id).all()
-    return jsonify([
+    result = [
         {
             "id": m.id,
             "matchday": m.matchday,
@@ -192,7 +207,9 @@ def get_matches():
             "date": m.date.isoformat() if m.date else None,
         }
         for m in matches
-    ])
+    ]
+    cache_set(cache_key, result, 5)
+    return jsonify(result)
 
 
 @app.route("/api/matches", methods=["POST"])
@@ -247,6 +264,12 @@ def update_scores():
 
 def try_live_fetch():
     """Tenta di fetchare risultati live dall'API se configurata. Solo se ci sono partite senza punteggio già iniziate."""
+    # Cache: non fetcha più di una volta ogni 15s
+    ck = f"live_fetch_{INSTANCE}"
+    if cache_get(ck):
+        return
+    cache_set(ck, True, 15)
+
     # Check if live is enabled by admin (default: enabled)
     live_cfg = Config.query.filter_by(instance=INSTANCE, key="live_enabled").first()
     if live_cfg and live_cfg.value != "1":
@@ -321,6 +344,12 @@ def try_live_fetch():
 
 @app.route("/api/standings")
 def get_standings():
+    # Cache 5s per non sovraccaricare
+    cache_key = f"standings_{INSTANCE}_{request.args.get('matchday')}_{request.args.get('live')}"
+    cached = cache_get(cache_key)
+    if cached:
+        return jsonify(cached)
+
     # Auto-fetch live results if configured
     live = request.args.get("live")
     if live is not None:
@@ -343,6 +372,7 @@ def get_standings():
             "details": details,
         })
     result.sort(key=lambda x: x["total_points"], reverse=True)
+    cache_set(cache_key, result, 5)
     return jsonify(result)
 
 
