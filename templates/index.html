@@ -818,55 +818,63 @@ async function loadAllUsersSelections() {
 }
 
 // --- MATCH FEED ---
-let _matchFeedCache = null;
+let _matchFeedTotal = 0;
+let _feedStandings = null;
 
 async function loadMatchFeed() {
-    _matchFeedCache = null;
-    loadMatchFeedAtIdx();
+    _feedStandings = null;
+    await loadMatchFeedAtIdx();
 }
 
 async function loadMatchFeedAtIdx(idx) {
     const container = document.getElementById('matchFeedContainer');
-    if (!_matchFeedCache) {
-        try {
-            const [matches, standings] = await Promise.all([
-                API.get('/api/matches'),
-                API.get('/api/standings'),
-            ]);
-            matches.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-            _matchFeedCache = matches.filter(m => m.date);
-            _matchFeedCache.standings = standings;
-        } catch(e) { container.innerHTML = ''; return; }
-    }
-    const matches = _matchFeedCache;
-    const teamUsers = {};
-    _matchFeedCache.standings.forEach(u => {
-        Object.entries(u.details || {}).forEach(([f, d]) => {
-            if (!teamUsers[d.team]) teamUsers[d.team] = [];
-            teamUsers[d.team].push({name: u.name, points: d.points});
-        });
-    });
+    try {
+        // Get total count (lightweight, no data)
+        const info = await API.get('/api/match-feed');
+        const total = info.total;
+        if (!total) { container.innerHTML = ''; return; }
 
-    // Find current index if not specified
-    const now = new Date();
-    let currentIdx = idx !== undefined ? idx : 0;
-    if (idx === undefined) {
-        for (let i = 0; i < matches.length; i++) {
-            const d = new Date(matches[i].date);
-            if (d <= now && matches[i].home_score === null) { currentIdx = i; break; }
-            if (d > now) { currentIdx = Math.max(0, i - 1); break; }
-            currentIdx = i;
+        // Find current index if not specified
+        const now = new Date();
+        let currentIdx = idx !== undefined ? idx : 0;
+        if (idx === undefined) {
+            // Scan to find the right match - fetch in batches
+            for (let i = 0; i < total; i++) {
+                const m = await API.get('/api/match-feed?idx=' + i);
+                if (!m.match) continue;
+                const d = new Date(m.match.date);
+                if (d <= now && m.match.home_score === null) { currentIdx = i; break; }
+                if (d > now) { currentIdx = Math.max(0, i - 1); break; }
+                currentIdx = i;
+            }
         }
+
+        // Fetch the current match
+        const matchData = await API.get('/api/match-feed?idx=' + currentIdx);
+        if (!matchData.match) { container.innerHTML = ''; return; }
+        const m = matchData.match;
+
+        // Get standings once and cache
+        if (!_feedStandings) {
+            _feedStandings = await API.get('/api/standings');
+        }
+
+        // Build team -> users lookup
+        const teamUsers = {};
+        _feedStandings.forEach(u => {
+            Object.entries(u.details || {}).forEach(([f, d]) => {
+                if (!teamUsers[d.team]) teamUsers[d.team] = [];
+                teamUsers[d.team].push({name: u.name, points: d.points});
+            });
+        });
+
+        renderMatchFeed(m, teamUsers, currentIdx, total, container);
+    } catch(e) {
+        container.innerHTML = '';
     }
-    renderMatchFeed(matches, teamUsers, currentIdx, container);
 }
 
-function renderMatchFeed(matches, teamUsers, currentIdx, container) {
-    if (!matches.length) { container.innerHTML = ''; return; }
-    // Bounds check
-    currentIdx = Math.max(0, Math.min(currentIdx, matches.length - 1));
-    const m = matches[currentIdx];
-    const isDone = m.home_score !== null;
+function renderMatchFeed(m, teamUsers, currentIdx, total, container) {
 
     function dateStr(d) {
         const dd = new Date(d);
@@ -889,23 +897,17 @@ function renderMatchFeed(matches, teamUsers, currentIdx, container) {
         html += '<span style="font-size:1.5rem;font-weight:800;color:#f0c040;">' + m.home_score + '-' + m.away_score + '</span>';
         html += '<span style="font-size:1.1rem;font-weight:700;">' + m.away_team + '</span>';
         html += '</div>';
-        const allPlayers = [...homePlayers, ...awayPlayers];
-        const playerPts = {};
-        allPlayers.forEach(p => { if (!playerPts[p.name]) playerPts[p.name] = 0; playerPts[p.name] += p.points; });
-        const sorted = Object.entries(playerPts).sort((a, b) => b[1] - a[1]);
-        if (sorted.length) {
-            html += '<div style="font-size:0.85rem;color:#889;margin-top:0.5rem;">Punti:</div>';
-            // Per team
-            if (homePlayers.length) {
-                html += '<div style="font-size:0.85rem;margin-top:0.2rem;"><span style="color:#c8d0e0;">🏠 ' + m.home_team + ':</span> ';
-                html += homePlayers.sort((a,b) => a.name.localeCompare(b.name, 'it', {sensitivity:'base'})).map(p => '<span style="font-weight:600;color:#f0c040;">' + p.name + ' +' + p.points + '</span>').join(', ');
-                html += '</div>';
-            }
-            if (awayPlayers.length) {
-                html += '<div style="font-size:0.85rem;margin-top:0.2rem;"><span style="color:#c8d0e0;">✈ ' + m.away_team + ':</span> ';
-                html += awayPlayers.sort((a,b) => a.name.localeCompare(b.name, 'it', {sensitivity:'base'})).map(p => '<span style="font-weight:600;color:#f0c040;">' + p.name + ' +' + p.points + '</span>').join(', ');
-                html += '</div>';
-            }
+        if (homePlayers.length || awayPlayers.length) {
+            html += '<div style="margin-top:0.5rem;font-size:0.9rem;color:#c8d0e0;">Punti:</div>';
+            // Group by player with points
+            const ptsByPlayer = {};
+            homePlayers.forEach(p => { if (!ptsByPlayer[p.name]) ptsByPlayer[p.name] = {teams: [], points: 0}; ptsByPlayer[p.name].teams.push(m.home_team); ptsByPlayer[p.name].points += p.points; });
+            awayPlayers.forEach(p => { if (!ptsByPlayer[p.name]) ptsByPlayer[p.name] = {teams: [], points: 0}; ptsByPlayer[p.name].teams.push(m.away_team); ptsByPlayer[p.name].points += p.points; });
+            const sortedPts = Object.keys(ptsByPlayer).sort((a,b) => a.localeCompare(b, 'it', {sensitivity:'base'}));
+            sortedPts.forEach(name => {
+                const data = ptsByPlayer[name];
+                html += '<div style="padding:0.15rem 0;font-size:0.9rem;"><span style="color:#8c8;">' + name + '</span> → ' + data.teams.join(' + ') + ' <span style="font-weight:700;color:#f0c040;">+' + data.points + 'pt</span></div>';
+            });
         }
         html += '</div>';
     } else {
@@ -918,13 +920,16 @@ function renderMatchFeed(matches, teamUsers, currentIdx, container) {
         html += '</div>';
         html += '<div style="text-align:center;font-size:0.85rem;color:#889;">' + dateStr(m.date) + '</div>';
         if (allInvolved.length > 0) {
-            html += '<div style="font-size:0.85rem;color:#889;margin-top:0.5rem;">';
-            html += '<div><span style="color:#c8d0e0;">🏠 ' + m.home_team + ':</span> ';
-            html += (homePlayers.length ? homePlayers.sort((a,b) => a.name.localeCompare(b.name, 'it', {sensitivity:'base'})).map(p => '<span style="color:#8c8;">' + p.name + '</span>').join(', ') : '<span style="color:#445;">nessuno</span>');
-            html += '</div>';
-            html += '<div style="margin-top:0.2rem;"><span style="color:#c8d0e0;">✈ ' + m.away_team + ':</span> ';
-            html += (awayPlayers.length ? awayPlayers.sort((a,b) => a.name.localeCompare(b.name, 'it', {sensitivity:'base'})).map(p => '<span style="color:#8c8;">' + p.name + '</span>').join(', ') : '<span style="color:#445;">nessuno</span>');
-            html += '</div>';
+            // Group by player: for each player, list which teams they have in this match
+            const playerTeams = {};
+            homePlayers.forEach(p => { if (!playerTeams[p.name]) playerTeams[p.name] = []; playerTeams[p.name].push({team: m.home_team, side: 'home'}); });
+            awayPlayers.forEach(p => { if (!playerTeams[p.name]) playerTeams[p.name] = []; playerTeams[p.name].push({team: m.away_team, side: 'away'}); });
+            const sortedPlayers = Object.keys(playerTeams).sort((a,b) => a.localeCompare(b, 'it', {sensitivity:'base'}));
+            html += '<div style="margin-top:0.5rem;">';
+            sortedPlayers.forEach(name => {
+                const teams = playerTeams[name].map(t => t.team).join(' + ');
+                html += '<div style="font-size:0.9rem;padding:0.15rem 0;color:#c8d0e0;"><span style="color:#8c8;">' + name + '</span> → ' + teams + '</div>';
+            });
             html += '</div>';
         }
         html += '</div>';
@@ -933,8 +938,8 @@ function renderMatchFeed(matches, teamUsers, currentIdx, container) {
     html += '<div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.8rem;">';
     if (currentIdx > 0)
         html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(-1)">\u2190 Precedente</button>';
-    html += '<span style="color:#667;font-size:0.85rem;align-self:center;">' + (currentIdx + 1) + ' di ' + matches.length + '</span>';
-    if (currentIdx < matches.length - 1)
+    html += '<span style="color:#667;font-size:0.85rem;align-self:center;">' + (currentIdx + 1) + ' di ' + total + '</span>';
+    if (currentIdx < total - 1)
         html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(1)">Successive \u2192</button>';
     html += '</div>';
 
@@ -1391,6 +1396,8 @@ async function doLiveRefresh() {
             }
             const matchesSection = document.getElementById('section-matches');
             if (matchesSection && matchesSection.classList.contains('active')) loadMatches();
+            // Invalida cache feed così si aggiorna
+            _feedStandings = null;
         }
     } catch(e) {}
 }

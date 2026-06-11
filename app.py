@@ -212,6 +212,30 @@ def get_matches():
     return jsonify(result)
 
 
+@app.route("/api/match-feed")
+def get_match_feed():
+    idx = request.args.get("idx", type=int)
+    query = Match.query.filter_by(instance=INSTANCE).order_by(Match.matchday, Match.date, Match.id)
+    if idx is not None:
+        total = query.count()
+        match = query.offset(idx).limit(1).first()
+        if not match:
+            return jsonify({"total": total, "match": None})
+        return jsonify({
+            "total": total,
+            "match": {
+                "matchday": match.matchday,
+                "home_team": match.home_team,
+                "away_team": match.away_team,
+                "home_score": match.home_score,
+                "away_score": match.away_score,
+                "date": match.date.isoformat() if match.date else None,
+            }
+        })
+    # No idx: return just total
+    return jsonify({"total": query.count()})
+
+
 @app.route("/api/matches", methods=["POST"])
 def save_matches():
     user_id = session.get("user_id")
