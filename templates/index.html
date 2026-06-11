@@ -872,7 +872,7 @@ function renderMatchFeed(m, teamUsers, currentIdx, total, container) {
         const dd = new Date(d);
         const days = ['dom','lun','mar','mer','gio','ven','sab'];
         const months = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
-        return days[dd.getUTCDay()] + ' ' + String(dd.getUTCDate()).padStart(2,'0') + ' ' + months[dd.getUTCMonth()] + ', ore ' + String(dd.getUTCHours()).padStart(2,'0') + ':' + String(dd.getUTCMinutes()).padStart(2,'0');
+        return days[dd.getDay()] + ' ' + String(dd.getDate()).padStart(2,'0') + ' ' + months[dd.getMonth()] + ', ore ' + String(dd.getHours()).padStart(2,'0') + ':' + String(dd.getMinutes()).padStart(2,'0');
     }
 
     const homePlayers = teamUsers[m.home_team] || [];
@@ -1001,11 +1001,11 @@ async function loadMatches() {
                 const d = new Date(m.date);
                 const days = ['dom','lun','mar','mer','gio','ven','sab'];
                 const months = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
-                const day = days[d.getUTCDay()];
-                const dd = String(d.getUTCDate()).padStart(2,'0');
-                const mm = months[d.getUTCMonth()];
-                const hh = String(d.getUTCHours()).padStart(2,'0');
-                const mi = String(d.getUTCMinutes()).padStart(2,'0');
+                const day = days[d.getDay()];
+                const dd = String(d.getDate()).padStart(2,'0');
+                const mm = months[d.getMonth()];
+                const hh = String(d.getHours()).padStart(2,'0');
+                const mi = String(d.getMinutes()).padStart(2,'0');
                 dateStr = `${day} ${dd} ${mm}, ore ${hh}:${mi}`;
             }
             const showDate = dateStr && dateStr !== currentDate;
