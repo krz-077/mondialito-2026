@@ -1300,6 +1300,7 @@ document.querySelectorAll('nav button[data-section]').forEach(btn => {
     btn.addEventListener('click', () => {
         if (btn.dataset.section === 'matches') loadMatches();
         if (btn.dataset.section === 'users') loadAdminUsers();
+        if (btn.dataset.section === 'selections') { renderSelections(); loadMatchFeed(); }
     });
 });
 
@@ -1389,11 +1390,6 @@ async function doLiveRefresh() {
             if (matchesSection && matchesSection.classList.contains('active')) loadMatches();
             // Invalida cache feed così si aggiorna
             _feedStandings = null;
-            // Refresh match feed se il tab Squadre è visibile
-            const feedSection = document.getElementById('section-selections');
-            if (feedSection && feedSection.classList.contains('active')) {
-                loadMatchFeed();
-            }
         }
     } catch(e) {}
 }
