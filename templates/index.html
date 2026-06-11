@@ -847,9 +847,11 @@ async function loadMatchFeedAtIdx(idx) {
 
         // Show match immediately, then load standings async
         const m = allMatches[currentIdx];
-        renderMatchFeed(m, {}, currentIdx, allMatches.length, container);
+        if (!_feedStandings) {
+            renderMatchFeed(m, {}, currentIdx, allMatches.length, container);
+        }
 
-        // Load standings in background (may be slow)
+        // Load standings if needed
         try {
             if (!_feedStandings) _feedStandings = await API.get('/api/standings');
             const teamUsers = {};
@@ -1388,8 +1390,20 @@ async function doLiveRefresh() {
             }
             const matchesSection = document.getElementById('section-matches');
             if (matchesSection && matchesSection.classList.contains('active')) loadMatches();
-            // Invalida cache feed così si aggiorna
-            _feedStandings = null;
+            // Aggiorna cache feed con gli standings appena ricevuti
+            try {
+                const data = await res.json();
+                if (data && data.length) {
+                    _feedStandings = data;
+                    // Se il feed partite è visibile, aggiorna solo la partita corrente
+                    const feedSection = document.getElementById('section-selections');
+                    if (feedSection && feedSection.classList.contains('active')) {
+                        const container = document.getElementById('matchFeedContainer');
+                        const idx = parseInt(container.dataset.idx || '-1');
+                        if (idx >= 0) loadMatchFeedAtIdx(idx);
+                    }
+                }
+            } catch(e) {}
         }
     } catch(e) {}
 }
