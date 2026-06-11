@@ -863,6 +863,8 @@ async function loadMatchFeedAtIdx(idx) {
 
 function renderMatchFeed(matches, teamUsers, currentIdx, container) {
     if (!matches.length) { container.innerHTML = ''; return; }
+    // Bounds check
+    currentIdx = Math.max(0, Math.min(currentIdx, matches.length - 1));
     const m = matches[currentIdx];
     const isDone = m.home_score !== null;
 
@@ -923,13 +925,13 @@ function renderMatchFeed(matches, teamUsers, currentIdx, container) {
     html += '</div>';
 
     container.innerHTML = html;
+    container.dataset.idx = currentIdx;
 }
 
 function matchFeedNav(dir) {
     const container = document.getElementById('matchFeedContainer');
-    const cards = container.querySelectorAll('[data-idx]');
-    // Re-derive idx from the rendered state by searching for the current card
-    loadMatchFeedAtIdx(parseInt(container.dataset.idx || '0') + dir);
+    const currentIdx = parseInt(container.dataset.idx || '0');
+    loadMatchFeedAtIdx(currentIdx + dir);
 }
 
 document.getElementById('saveSelections').onclick = async () => {
