@@ -35,7 +35,7 @@ INSTANCE = os.environ.get("INSTANCE", "default")
 _cache = {}
 def cache_get(key):
     val = _cache.get(key)
-    if val and val["ttl"] > datetime.now(timezone.utc):
+    if val and val["ttl"] > datetime.now(timezone.utc).timestamp():
         return val["data"]
     return None
 def cache_set(key, data, ttl_seconds=15):
