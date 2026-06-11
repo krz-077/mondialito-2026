@@ -245,8 +245,82 @@ def update_scores():
     return jsonify({"ok": True})
 
 
+def try_live_fetch():
+    """Tenta di fetchare risultati live dall'API se configurata. Solo se ci sono partite senza punteggio già iniziate."""
+    import requests as req
+    api_key_cfg = Config.query.filter_by(instance=INSTANCE, key="football_api_key").first()
+
+    # Test mode: simula risultati senza chiamare API esterna
+    if os.environ.get("LIVE_TEST_MODE") == "1":
+        import random
+        pending = Match.query.filter(
+            Match.instance == INSTANCE,
+            Match.date.isnot(None),
+            Match.home_score.is_(None),
+        ).limit(2).all()  # 2 partite a ciclo per simulare partite che finiscono
+        if not pending:
+            return
+        for m in pending:
+            m.home_score = random.randint(0, 3)
+            m.away_score = random.randint(0, 3)
+        db.session.commit()
+        return
+
+    if not api_key_cfg or not api_key_cfg.value:
+        return
+
+    # Check if there are unplayed matches whose scheduled time has passed
+    # Match dates are stored in Italian time (UTC+2)
+    from datetime import timedelta
+    now_it = datetime.now(timezone.utc) + timedelta(hours=2)
+    pending = Match.query.filter(
+        Match.instance == INSTANCE,
+        Match.date.isnot(None),
+        Match.date < now_it,
+        Match.home_score.is_(None),
+    ).count()
+    if pending == 0:
+        return  # Nessuna partita da aggiornare
+
+    try:
+        r = req.get(
+            "https://api.football-data.org/v4/competitions/2000/matches",
+            headers={"X-Auth-Token": api_key_cfg.value}, timeout=10
+        )
+        if r.status_code != 200:
+            return
+        data = r.json()
+        updated = 0
+        for m in data.get("matches", []):
+            home_name = m.get("homeTeam", {}).get("name")
+            away_name = m.get("awayTeam", {}).get("name")
+            if not home_name or not away_name:
+                continue
+            home_api = norm_api(home_name)
+            away_api = norm_api(away_name)
+            score = m.get("score")
+            if not score or score.get("fullTime", {}).get("home") is None:
+                continue
+            match = Match.query.filter_by(instance=INSTANCE, home_team=home_api, away_team=away_api).first()
+            if not match:
+                match = Match.query.filter_by(instance=INSTANCE, home_team=away_api, away_team=home_api).first()
+            if match and (match.home_score != score["fullTime"]["home"] or match.away_score != score["fullTime"]["away"]):
+                match.home_score = score["fullTime"]["home"]
+                match.away_score = score["fullTime"]["away"]
+                updated += 1
+        if updated:
+            db.session.commit()
+    except Exception:
+        pass
+
+
 @app.route("/api/standings")
 def get_standings():
+    # Auto-fetch live results if configured
+    live = request.args.get("live")
+    if live is not None:
+        try_live_fetch()
+
     users = User.query.filter_by(instance=INSTANCE, disabled=False).all()
     matchday = request.args.get("matchday", type=int)
     result = []
