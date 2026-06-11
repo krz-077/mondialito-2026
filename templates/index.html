@@ -828,27 +828,11 @@ async function loadMatchFeed() {
 async function loadMatchFeedAtIdx(idx) {
     const container = document.getElementById('matchFeedContainer');
     try {
-        // Fetch all matches in one call (rapido, payload piccolo ~5KB, cached 5s)
         let allMatches = await API.get('/api/matches');
         if (!allMatches.length) { container.innerHTML = ''; return; }
-        // Sort by date
         allMatches.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
-        // Get standings once and cache
-        if (!_feedStandings) {
-            _feedStandings = await API.get('/api/standings');
-        }
-
-        // Build team -> users lookup
-        const teamUsers = {};
-        _feedStandings.forEach(u => {
-            Object.entries(u.details || {}).forEach(([f, d]) => {
-                if (!teamUsers[d.team]) teamUsers[d.team] = [];
-                teamUsers[d.team].push({name: u.name, points: d.points});
-            });
-        });
-
-        // Find current index if not specified
+        // Find current index
         const now = new Date();
         let currentIdx = idx !== undefined ? idx : 0;
         if (idx === undefined) {
@@ -859,11 +843,26 @@ async function loadMatchFeedAtIdx(idx) {
                 currentIdx = i;
             }
         }
-
         currentIdx = Math.max(0, Math.min(currentIdx, allMatches.length - 1));
-        renderMatchFeed(allMatches[currentIdx], teamUsers, currentIdx, allMatches.length, container);
+
+        // Show match immediately, then load standings async
+        const m = allMatches[currentIdx];
+        renderMatchFeed(m, {}, currentIdx, allMatches.length, container);
+
+        // Load standings in background (may be slow)
+        try {
+            if (!_feedStandings) _feedStandings = await API.get('/api/standings');
+            const teamUsers = {};
+            _feedStandings.forEach(u => {
+                Object.entries(u.details || {}).forEach(([f, d]) => {
+                    if (!teamUsers[d.team]) teamUsers[d.team] = [];
+                    teamUsers[d.team].push({name: u.name, points: d.points});
+                });
+            });
+            renderMatchFeed(m, teamUsers, currentIdx, allMatches.length, container);
+        } catch(e) { /* standings fallback: ok, mostra senza giocatori */ }
     } catch(e) {
-        container.innerHTML = '';
+        container.innerHTML = '<div style="text-align:center;padding:1rem;color:#667;">Caricamento partite...</div>';
     }
 }
 
@@ -928,22 +927,20 @@ function renderMatchFeed(m, teamUsers, currentIdx, total, container) {
         html += '</div>';
     }
 
-    html += '<div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.8rem;">';
+        html += '<div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.8rem;">';
     if (currentIdx > 0)
-        html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(-1)">\u2190 Precedente</button>';
+        html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(' + (currentIdx - 1) + ')">\u2190 Precedente</button>';
     html += '<span style="color:#667;font-size:0.85rem;align-self:center;">' + (currentIdx + 1) + ' di ' + total + '</span>';
     if (currentIdx < total - 1)
-        html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(1)">Successive \u2192</button>';
+        html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(' + (currentIdx + 1) + ')">Successive \u2192</button>';
     html += '</div>';
 
     container.innerHTML = html;
     container.dataset.idx = currentIdx;
 }
 
-function matchFeedNav(dir) {
-    const container = document.getElementById('matchFeedContainer');
-    const currentIdx = parseInt(container.dataset.idx || '0');
-    loadMatchFeedAtIdx(currentIdx + dir);
+function matchFeedNav(idx) {
+    loadMatchFeedAtIdx(idx);
 }
 
 document.getElementById('saveSelections').onclick = async () => {
