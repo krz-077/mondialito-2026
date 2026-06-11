@@ -322,6 +322,11 @@ footer {
         <div id="selectionsAlert" class="alert" style="display:none;margin-top:1rem;"></div>
     </div>
 
+    <div class="card" id="matchFeedCard">
+        <h2>Partite</h2>
+        <div id="matchFeedContainer"></div>
+    </div>
+
     <div class="card" id="leaderboardCard" style="display:none;">
         <h2>Classifica</h2>
         <div id="leaderboardContainer"></div>
@@ -590,6 +595,7 @@ async function checkSession() {
             document.getElementById('apiKeySection').style.display = 'none';
             document.getElementById('adminBadge').style.display = 'none';
             loadStandingsForGuests();
+            loadMatchFeed();
         }
     } catch(e) { console.error(e); }
 }
@@ -731,10 +737,12 @@ function renderSelections() {
 
         // Load all users' picks
         loadAllUsersSelections();
+        loadMatchFeed();
     }).catch(() => {
         container.innerHTML = '<div class="empty-state"><p>Accedi per scegliere le tue squadre</p></div>';
         saveBtn.style.display = 'none';
-        document.getElementById('otherUsersCard').style.display = 'none';
+        document.getElementById('leaderboardCard').style.display = 'none';
+        document.getElementById('matchFeedCard').style.display = 'none';
     });
 }
 
@@ -807,6 +815,121 @@ async function loadAllUsersSelections() {
     } catch(e) {
         card.style.display = 'none';
     }
+}
+
+// --- MATCH FEED ---
+let _matchFeedCache = null;
+
+async function loadMatchFeed() {
+    _matchFeedCache = null;
+    loadMatchFeedAtIdx();
+}
+
+async function loadMatchFeedAtIdx(idx) {
+    const container = document.getElementById('matchFeedContainer');
+    if (!_matchFeedCache) {
+        try {
+            const [matches, standings] = await Promise.all([
+                API.get('/api/matches'),
+                API.get('/api/standings'),
+            ]);
+            matches.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+            _matchFeedCache = matches.filter(m => m.date);
+            _matchFeedCache.standings = standings;
+        } catch(e) { container.innerHTML = ''; return; }
+    }
+    const matches = _matchFeedCache;
+    const teamUsers = {};
+    _matchFeedCache.standings.forEach(u => {
+        Object.entries(u.details || {}).forEach(([f, d]) => {
+            if (!teamUsers[d.team]) teamUsers[d.team] = [];
+            teamUsers[d.team].push({name: u.name, points: d.points});
+        });
+    });
+
+    // Find current index if not specified
+    const now = new Date();
+    let currentIdx = idx !== undefined ? idx : 0;
+    if (idx === undefined) {
+        for (let i = 0; i < matches.length; i++) {
+            const d = new Date(matches[i].date);
+            if (d <= now && matches[i].home_score === null) { currentIdx = i; break; }
+            if (d > now) { currentIdx = Math.max(0, i - 1); break; }
+            currentIdx = i;
+        }
+    }
+    renderMatchFeed(matches, teamUsers, currentIdx, container);
+}
+
+function renderMatchFeed(matches, teamUsers, currentIdx, container) {
+    if (!matches.length) { container.innerHTML = ''; return; }
+    const m = matches[currentIdx];
+    const isDone = m.home_score !== null;
+
+    function dateStr(d) {
+        const dd = new Date(d);
+        const days = ['dom','lun','mar','mer','gio','ven','sab'];
+        const months = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+        return days[dd.getUTCDay()] + ' ' + String(dd.getUTCDate()).padStart(2,'0') + ' ' + months[dd.getUTCMonth()] + ', ore ' + String(dd.getUTCHours()).padStart(2,'0') + ':' + String(dd.getUTCMinutes()).padStart(2,'0');
+    }
+
+    const homePlayers = teamUsers[m.home_team] || [];
+    const awayPlayers = teamUsers[m.away_team] || [];
+    const allInvolved = [...new Set([...homePlayers.map(p => p.name), ...awayPlayers.map(p => p.name)])];
+
+    let html = '';
+
+    if (isDone) {
+        html += '<div style="background:#0f1838;border:1px solid #2a3a5a;border-radius:10px;padding:1rem;">';
+        html += '<div style="font-size:0.8rem;color:#889;margin-bottom:0.3rem;">' + dateStr(m.date) + ' · \u26BD Partita giocata</div>';
+        html += '<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin:0.5rem 0;">';
+        html += '<span style="font-size:1.1rem;font-weight:700;">' + m.home_team + '</span>';
+        html += '<span style="font-size:1.5rem;font-weight:800;color:#f0c040;">' + m.home_score + '-' + m.away_score + '</span>';
+        html += '<span style="font-size:1.1rem;font-weight:700;">' + m.away_team + '</span>';
+        html += '</div>';
+        const allPlayers = [...homePlayers, ...awayPlayers];
+        const playerPts = {};
+        allPlayers.forEach(p => { if (!playerPts[p.name]) playerPts[p.name] = 0; playerPts[p.name] += p.points; });
+        const sorted = Object.entries(playerPts).sort((a, b) => b[1] - a[1]);
+        if (sorted.length) {
+            html += '<div style="font-size:0.85rem;color:#889;text-align:center;">Punti: ';
+            html += sorted.map(([name, pts]) => '<span style="font-weight:600;color:#f0c040;">' + name + ' +' + pts + '</span>').join(' \u00B7 ');
+            html += '</div>';
+        }
+        html += '</div>';
+    } else {
+        html += '<div style="background:linear-gradient(135deg,#1a2a1a,#2a4a2a);border:1px solid #3a6a3a;border-radius:10px;padding:1rem;">';
+        html += '<div style="font-size:0.8rem;color:#8c8;margin-bottom:0.3rem;">\u23ED PROSSIMA PARTITA</div>';
+        html += '<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin:0.5rem 0;">';
+        html += '<span style="font-size:1.1rem;font-weight:700;">' + m.home_team + '</span>';
+        html += '<span style="font-size:1.5rem;font-weight:800;color:#667;">vs</span>';
+        html += '<span style="font-size:1.1rem;font-weight:700;">' + m.away_team + '</span>';
+        html += '</div>';
+        html += '<div style="text-align:center;font-size:0.85rem;color:#889;">' + dateStr(m.date) + '</div>';
+        if (allInvolved.length > 0) {
+            html += '<div style="font-size:0.85rem;color:#889;text-align:center;margin-top:0.3rem;">In campo: ';
+            html += allInvolved.map(n => '<span style="color:#8c8;">' + n + '</span>').join(', ');
+            html += '</div>';
+        }
+        html += '</div>';
+    }
+
+    html += '<div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.8rem;">';
+    if (currentIdx > 0)
+        html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(-1)">\u2190 Precedente</button>';
+    html += '<span style="color:#667;font-size:0.85rem;align-self:center;">' + (currentIdx + 1) + ' di ' + matches.length + '</span>';
+    if (currentIdx < matches.length - 1)
+        html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(1)">Successive \u2192</button>';
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
+function matchFeedNav(dir) {
+    const container = document.getElementById('matchFeedContainer');
+    const cards = container.querySelectorAll('[data-idx]');
+    // Re-derive idx from the rendered state by searching for the current card
+    loadMatchFeedAtIdx(parseInt(container.dataset.idx || '0') + dir);
 }
 
 document.getElementById('saveSelections').onclick = async () => {
