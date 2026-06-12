@@ -819,6 +819,7 @@ async function loadAllUsersSelections() {
 
 // --- MATCH FEED ---
 let _feedStandings = null;
+let _feedMatches = null;
 
 async function loadMatchFeed() {
     _feedStandings = null;
@@ -844,6 +845,7 @@ async function loadMatchFeedAtIdx(idx) {
             }
         }
         currentIdx = Math.max(0, Math.min(currentIdx, allMatches.length - 1));
+        _feedMatches = allMatches;
 
         // Show match immediately, then load standings async
         const m = allMatches[currentIdx];
@@ -877,65 +879,72 @@ function renderMatchFeed(m, teamUsers, currentIdx, total, container) {
         return days[dd.getDay()] + ' ' + String(dd.getDate()).padStart(2,'0') + ' ' + months[dd.getMonth()] + ', ore ' + String(dd.getHours()).padStart(2,'0') + ':' + String(dd.getMinutes()).padStart(2,'0');
     }
 
-    const homePlayers = teamUsers[m.home_team] || [];
-    const awayPlayers = teamUsers[m.away_team] || [];
-    const allInvolved = [...new Set([...homePlayers.map(p => p.name), ...awayPlayers.map(p => p.name)])];
-    const isDone = m.home_score !== null;
+    function renderCard(match, showLabel) {
+        const homePlayers = teamUsers[match.home_team] || [];
+        const awayPlayers = teamUsers[match.away_team] || [];
+        const allInvolved = [...new Set([...homePlayers.map(p => p.name), ...awayPlayers.map(p => p.name)])];
+        const isDone = match.home_score !== null;
+        let html = '<div style="background:#111a40;border:1px solid #2a3a6a;border-radius:16px;padding:1.2rem;margin-bottom:0.8rem;">';
 
-    let html = '';
-
-    if (isDone) {
-        html += '<div style="background:#111a40;border:1px solid #2a3a6a;border-radius:16px;padding:1.2rem;">';
-        html += '<div style="font-size:0.8rem;color:#889;margin-bottom:0.3rem;">' + dateStr(m.date) + ' · \u26BD Partita giocata</div>';
-        html += '<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin:0.5rem 0;">';
-        html += '<span style="font-size:1.1rem;font-weight:700;">' + m.home_team + '</span>';
-        html += '<span style="font-size:1.5rem;font-weight:800;color:#f0c040;">' + m.home_score + '-' + m.away_score + '</span>';
-        html += '<span style="font-size:1.1rem;font-weight:700;">' + m.away_team + '</span>';
-        html += '</div>';
-        if (homePlayers.length || awayPlayers.length) {
-            html += '<div style="margin-top:0.5rem;font-size:0.9rem;color:#c8d0e0;">Punti:</div>';
-            // Group by player with points
-            const ptsByPlayer = {};
-            homePlayers.forEach(p => { if (!ptsByPlayer[p.name]) ptsByPlayer[p.name] = {teams: [], points: 0}; ptsByPlayer[p.name].teams.push(m.home_team); ptsByPlayer[p.name].points += p.points; });
-            awayPlayers.forEach(p => { if (!ptsByPlayer[p.name]) ptsByPlayer[p.name] = {teams: [], points: 0}; ptsByPlayer[p.name].teams.push(m.away_team); ptsByPlayer[p.name].points += p.points; });
-            const sortedPts = Object.keys(ptsByPlayer).sort((a,b) => a.localeCompare(b, 'it', {sensitivity:'base'}));
-            sortedPts.forEach(name => {
-                const data = ptsByPlayer[name];
-                html += '<div style="padding:0.15rem 0;font-size:0.9rem;"><span style="color:#8c8;">' + name + '</span> → ' + data.teams.join(' + ') + ' <span style="font-weight:700;color:#f0c040;">+' + data.points + 'pt</span></div>';
-            });
-        }
-        html += '</div>';
-    } else {
-        html += '<div style="background:#111a40;border:1px solid #2a3a6a;border-radius:16px;padding:1.2rem;">';
-        html += '<div style="font-size:0.8rem;color:#f0c040;margin-bottom:0.3rem;font-weight:600;">⏭ PROSSIMA PARTITA</div>';
-        html += '<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin:0.5rem 0;">';
-        html += '<span style="font-size:1.1rem;font-weight:700;">' + m.home_team + '</span>';
-        html += '<span style="font-size:1.5rem;font-weight:800;color:#667;">vs</span>';
-        html += '<span style="font-size:1.1rem;font-weight:700;">' + m.away_team + '</span>';
-        html += '</div>';
-        html += '<div style="text-align:center;font-size:0.85rem;color:#889;">' + dateStr(m.date) + '</div>';
-        if (allInvolved.length > 0) {
-            // Group by player: for each player, list which teams they have in this match
-            const playerTeams = {};
-            homePlayers.forEach(p => { if (!playerTeams[p.name]) playerTeams[p.name] = []; playerTeams[p.name].push({team: m.home_team, side: 'home'}); });
-            awayPlayers.forEach(p => { if (!playerTeams[p.name]) playerTeams[p.name] = []; playerTeams[p.name].push({team: m.away_team, side: 'away'}); });
-            const sortedPlayers = Object.keys(playerTeams).sort((a,b) => a.localeCompare(b, 'it', {sensitivity:'base'}));
-            html += '<div style="margin-top:0.5rem;">';
-            sortedPlayers.forEach(name => {
-                const teams = playerTeams[name].map(t => t.team).join(' + ');
-                html += '<div style="font-size:0.9rem;padding:0.15rem 0;color:#c8d0e0;"><span style="color:#8c8;">' + name + '</span> → ' + teams + '</div>';
-            });
+        if (isDone) {
+            html += '<div style="font-size:0.8rem;color:#889;margin-bottom:0.3rem;">' + dateStr(match.date) + ' · \u26BD Partita giocata</div>';
+            html += '<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin:0.5rem 0;">';
+            html += '<span style="font-size:1.1rem;font-weight:700;">' + match.home_team + '</span>';
+            html += '<span style="font-size:1.5rem;font-weight:800;color:#f0c040;">' + match.home_score + '-' + match.away_score + '</span>';
+            html += '<span style="font-size:1.1rem;font-weight:700;">' + match.away_team + '</span>';
             html += '</div>';
+            if (homePlayers.length || awayPlayers.length) {
+                html += '<div style="margin-top:0.5rem;font-size:0.9rem;color:#c8d0e0;">Punti:</div>';
+                const ptsByPlayer = {};
+                homePlayers.forEach(p => { if (!ptsByPlayer[p.name]) ptsByPlayer[p.name] = {teams: [], points: 0}; ptsByPlayer[p.name].teams.push(match.home_team); ptsByPlayer[p.name].points += p.points; });
+                awayPlayers.forEach(p => { if (!ptsByPlayer[p.name]) ptsByPlayer[p.name] = {teams: [], points: 0}; ptsByPlayer[p.name].teams.push(match.away_team); ptsByPlayer[p.name].points += p.points; });
+                const sortedPts = Object.keys(ptsByPlayer).sort((a,b) => a.localeCompare(b, 'it', {sensitivity:'base'}));
+                sortedPts.forEach(name => {
+                    const data = ptsByPlayer[name];
+                    html += '<div style="padding:0.15rem 0;font-size:0.9rem;"><span style="color:#8c8;">' + name + '</span> → ' + data.teams.join(' + ') + ' <span style="font-weight:700;color:#f0c040;">+' + data.points + 'pt</span></div>';
+                });
+            }
+        } else {
+            html += '<div style="font-size:0.8rem;color:#f0c040;margin-bottom:0.3rem;font-weight:600;">' + (showLabel ? '⏭ PROSSIMA PARTITA' : '⏭ PARTITA IN PROGRAMMA') + '</div>';
+            html += '<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin:0.5rem 0;">';
+            html += '<span style="font-size:1.1rem;font-weight:700;">' + match.home_team + '</span>';
+            html += '<span style="font-size:1.5rem;font-weight:800;color:#667;">vs</span>';
+            html += '<span style="font-size:1.1rem;font-weight:700;">' + match.away_team + '</span>';
+            html += '</div>';
+            html += '<div style="text-align:center;font-size:0.85rem;color:#889;">' + dateStr(match.date) + '</div>';
+            if (allInvolved.length > 0) {
+                html += '<div style="margin-top:0.5rem;">';
+                const playerTeams = {};
+                homePlayers.forEach(p => { if (!playerTeams[p.name]) playerTeams[p.name] = []; playerTeams[p.name].push(match.home_team); });
+                awayPlayers.forEach(p => { if (!playerTeams[p.name]) playerTeams[p.name] = []; playerTeams[p.name].push(match.away_team); });
+                const sortedPlayers = Object.keys(playerTeams).sort((a,b) => a.localeCompare(b, 'it', {sensitivity:'base'}));
+                sortedPlayers.forEach(name => {
+                    html += '<div style="font-size:0.9rem;padding:0.15rem 0;color:#c8d0e0;"><span style="color:#8c8;">' + name + '</span> → ' + playerTeams[name].join(' + ') + '</div>';
+                });
+                html += '</div>';
+            }
         }
         html += '</div>';
+        return html;
     }
 
-        html += '<div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.8rem;">';
+    let html = '<div style="margin-bottom:0.5rem;font-weight:600;color:#f0c040;font-size:0.95rem;">⚽ Partite</div>';
+
+    // Match corrente (finito o in corso)
+    html += renderCard(m, true);
+
+    // Prossimo match se esiste
+    if (currentIdx + 1 < total) {
+        const next = _feedMatches[currentIdx + 1];
+        html += renderCard(next, false);
+    }
+
+    html += '<div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.8rem;">';
     if (currentIdx > 0)
-        html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(' + (currentIdx - 1) + ')">\u2190 Precedente</button>';
+        html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(' + (currentIdx - 1) + ')">\u2190 Precedenti</button>';
     html += '<span style="color:#667;font-size:0.85rem;align-self:center;">' + (currentIdx + 1) + ' di ' + total + '</span>';
     if (currentIdx < total - 1)
-        html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(' + (currentIdx + 1) + ')">Successive \u2192</button>';
+        html += '<button class="btn secondary" style="padding:0.3rem 1rem;font-size:0.85rem;" onclick="matchFeedNav(' + (currentIdx + 1) + ')">Successivi \u2192</button>';
     html += '</div>';
 
     container.innerHTML = html;
