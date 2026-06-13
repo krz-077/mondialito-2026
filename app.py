@@ -59,6 +59,17 @@ with app.app_context():
         except Exception:
             db.session.rollback()
 
+    # Migrate: aggiorna date partite dai dati seed (senza sovrascrivere punteggi)
+    try:
+        from seed import MATCHES as seed_matches
+        for md, home, away, date in seed_matches:
+            existing = Match.query.filter_by(instance=INSTANCE, matchday=md, home_team=home, away_team=away).first()
+            if existing and existing.date != date:
+                existing.date = date
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
 
 @app.route("/")
 def index():
