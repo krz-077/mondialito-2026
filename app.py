@@ -59,13 +59,22 @@ with app.app_context():
         except Exception:
             db.session.rollback()
 
-    # Migrate: aggiorna date partite dai dati seed (senza sovrascrivere punteggi)
+    # Migrate: aggiorna date partite e ordini casa/trasferta
     try:
         from seed import MATCHES as seed_matches
         for md, home, away, date in seed_matches:
             existing = Match.query.filter_by(instance=INSTANCE, matchday=md, home_team=home, away_team=away).first()
-            if existing and existing.date != date:
-                existing.date = date
+            if existing:
+                if existing.date != date:
+                    existing.date = date
+            else:
+                # Match con ordine invertito? (es. Svizzera-Qatar → Qatar-Svizzera)
+                swapped = Match.query.filter_by(instance=INSTANCE, matchday=md, home_team=away, away_team=home).first()
+                if swapped:
+                    swapped.home_team = home
+                    swapped.away_team = away
+                    if swapped.date != date:
+                        swapped.date = date
         db.session.commit()
     except Exception:
         db.session.rollback()
