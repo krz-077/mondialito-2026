@@ -296,6 +296,23 @@ def try_live_fetch():
         ck = f"live_fetch_{INSTANCE}"
         if cache_get(ck):
             return
+
+        # Controlla se ci sono partite in corso o già iniziate senza punteggio
+        from datetime import timedelta
+        now_it = datetime.now(timezone.utc) + timedelta(hours=2)
+        pending = Match.query.filter(
+            Match.instance == INSTANCE,
+            Match.date.isnot(None),
+            Match.date < now_it,
+            Match.home_score.is_(None),
+        ).count()
+
+        if pending == 0:
+            # Nessuna partita in corso: cache lunga (5 minuti)
+            cache_set(ck, True, 300)
+            return
+
+        # Ci sono partite da aggiornare: cache breve (15s)
         cache_set(ck, True, 15)
 
         live_cfg = Config.query.filter_by(instance=INSTANCE, key="live_enabled").first()
@@ -321,17 +338,6 @@ def try_live_fetch():
             return
 
         if not api_key_cfg or not api_key_cfg.value:
-            return
-
-        from datetime import timedelta
-        now_it = datetime.now(timezone.utc) + timedelta(hours=2)
-        pending = Match.query.filter(
-            Match.instance == INSTANCE,
-            Match.date.isnot(None),
-            Match.date < now_it,
-            Match.home_score.is_(None),
-        ).count()
-        if pending == 0:
             return
 
         r = req.get(
