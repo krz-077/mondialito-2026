@@ -729,6 +729,23 @@ def admin_reset_selections(user_id):
     return jsonify({"ok": True})
 
 
+@app.route("/api/rebuild-cache", methods=["POST"])
+def rebuild_cache():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Non autenticato"}), 401
+    user = db.session.get(User, user_id)
+    if not user or not user.is_admin:
+        return jsonify({"error": "Solo admin"}), 403
+
+    count = 0
+    for sel in Selection.query.join(User).filter(User.instance == INSTANCE).all():
+        sel.update_cache()
+        count += 1
+    db.session.commit()
+    return jsonify({"ok": True, "rebuilt": count})
+
+
 @app.route("/api/simulate-results", methods=["POST"])
 def simulate_results():
     user_id = session.get("user_id")
