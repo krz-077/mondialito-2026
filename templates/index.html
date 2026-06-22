@@ -894,9 +894,29 @@ function renderMatchFeed(m, teamUsers, currentIdx, total, container) {
             html += '</div>';
             if (homePlayers.length || awayPlayers.length) {
                 html += '<div style="margin-top:0.5rem;font-size:0.9rem;color:#c8d0e0;">Punti:</div>';
+                // Calcola punti SOLO per questa partita
                 const ptsByPlayer = {};
-                homePlayers.forEach(p => { if (!ptsByPlayer[p.name]) ptsByPlayer[p.name] = {teams: [], points: 0}; ptsByPlayer[p.name].teams.push(match.home_team); ptsByPlayer[p.name].points += p.points; });
-                awayPlayers.forEach(p => { if (!ptsByPlayer[p.name]) ptsByPlayer[p.name] = {teams: [], points: 0}; ptsByPlayer[p.name].teams.push(match.away_team); ptsByPlayer[p.name].points += p.points; });
+                function addPts(player, team, isHome) {
+                    if (!ptsByPlayer[player]) ptsByPlayer[player] = {teams: [], points: 0};
+                    ptsByPlayer[player].teams.push(team);
+                    // Calcola punti in base al risultato e alla fascia della squadra
+                    const homeWon = match.home_score > match.away_score;
+                    const awayWon = match.away_score > match.home_score;
+                    const drawn = match.home_score === match.away_score;
+                    // Trova la fascia per questa squadra
+                    let fascia = null;
+                    for (const [f, teams] of Object.entries(fasce)) {
+                        if (teams.includes(team)) { fascia = parseInt(f); break; }
+                    }
+                    if (fascia && punteggi[fascia]) {
+                        const fp = punteggi[fascia];
+                        if (isHome && homeWon) ptsByPlayer[player].points += fp.win;
+                        else if (!isHome && awayWon) ptsByPlayer[player].points += fp.win;
+                        else if (drawn) ptsByPlayer[player].points += fp.draw;
+                    }
+                }
+                homePlayers.forEach(p => addPts(p.name, match.home_team, true));
+                awayPlayers.forEach(p => addPts(p.name, match.away_team, false));
                 const sortedPts = Object.keys(ptsByPlayer).sort((a,b) => a.localeCompare(b, 'it', {sensitivity:'base'}));
                 sortedPts.forEach(name => {
                     const data = ptsByPlayer[name];
