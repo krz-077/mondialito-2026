@@ -115,7 +115,6 @@ MATCHES = [
     (2, "Colombia", norm("Repubblica Democratica del Congo"), dt(24, 4)),
     (3, "Colombia", "Portogallo", dt(28, 1, 30)),
     (3, norm("Repubblica Democratica del Congo"), "Uzbekistan", dt(28, 1, 30)),
-
     # Gruppo L (Inghilterra-Croazia UTC-5 → +7h, Ghana-Panama UTC-4 → +6h, MD2/3 UTC-4 → +6h)
     (1, "Inghilterra", "Croazia", dt(17, 22)),
     (1, "Ghana", "Panama", dt(18, 1)),
@@ -123,6 +122,25 @@ MATCHES = [
     (2, "Panama", "Croazia", dt(24, 1)),
     (3, "Panama", "Inghilterra", dt(27, 23)),
     (3, "Croazia", "Ghana", dt(27, 23)),
+
+    # --- Sedicesimi di finale (MD4) ---
+    # Date/ora italiane da Google
+    (4, "Sudafrica", "Canada", dt(29, 21)),
+    (4, "Olanda", "Marocco", dt(30, 3)),
+    (4, "Brasile", "Giappone", dt(30, 19)),
+    (4, "Costa d'Avorio", "Norvegia", dt(30, 19)),
+    (4, "Germania", "Paraguay", dt(30, 22, 30)),
+    (4, "Francia", "Svezia", dt(30, 23)),
+    (4, "Messico", "Ecuador", dt(1, 3)),
+    (4, "Inghilterra", norm("Repubblica Democratica del Congo"), dt(1, 18)),
+    (4, "Belgio", "Senegal", dt(1, 22)),
+    (4, norm("Usa"), norm("Bosnia-Erzegovina"), dt(2, 2)),
+    (4, "Spagna", "Austria", dt(2, 21)),
+    (4, "Portogallo", "Croazia", dt(3, 1)),
+    (4, "Svizzera", "Algeria", dt(3, 5)),
+    (4, "Australia", "Egitto", dt(3, 20)),
+    (4, "Argentina", "Capo Verde", dt(4, 0)),
+    (4, "Colombia", "Ghana", dt(4, 3, 30)),
 ]
 
 def seed():
@@ -134,13 +152,19 @@ def seed():
             return
 
         from app import INSTANCE
-        if Match.query.filter_by(instance=INSTANCE).first():
-            print(f"Database già popolato per istanza '{INSTANCE}'. Salto seed.")
-            return
-
+        added = 0
         for md, home, away, date in MATCHES:
-            match = Match(instance=INSTANCE, matchday=md, home_team=home, away_team=away, date=date)
-            db.session.add(match)
+            existing = Match.query.filter_by(instance=INSTANCE, matchday=md, home_team=home, away_team=away).first()
+            if not existing:
+                match = Match(instance=INSTANCE, matchday=md, home_team=home, away_team=away, date=date)
+                db.session.add(match)
+                added += 1
+
+        if added:
+            db.session.commit()
+            print(f"Inserite {added} nuove partite per istanza '{INSTANCE}'")
+        else:
+            print(f"Nessuna nuova partita per istanza '{INSTANCE}'")
 
         # Admin user
         if not User.query.filter_by(instance=INSTANCE, name="admin").first():

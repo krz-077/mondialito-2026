@@ -59,23 +59,33 @@ with app.app_context():
         except Exception:
             db.session.rollback()
 
-    # Migrate: aggiorna date partite e ordini casa/trasferta
+    # Migrate: aggiorna date partite, ordini casa/trasferta, e aggiunge nuove
     try:
         from seed import MATCHES as seed_matches
+        added = 0
         for md, home, away, date in seed_matches:
             existing = Match.query.filter_by(instance=INSTANCE, matchday=md, home_team=home, away_team=away).first()
             if existing:
                 if existing.date != date:
                     existing.date = date
-            else:
-                # Match con ordine invertito? (es. Svizzera-Qatar → Qatar-Svizzera)
-                swapped = Match.query.filter_by(instance=INSTANCE, matchday=md, home_team=away, away_team=home).first()
-                if swapped:
-                    swapped.home_team = home
-                    swapped.away_team = away
-                    if swapped.date != date:
-                        swapped.date = date
+                continue
+
+            # Match con ordine invertito?
+            swapped = Match.query.filter_by(instance=INSTANCE, matchday=md, home_team=away, away_team=home).first()
+            if swapped:
+                swapped.home_team = home
+                swapped.away_team = away
+                if swapped.date != date:
+                    swapped.date = date
+                continue
+
+            # Match non esiste: lo aggiungo
+            db.session.add(Match(instance=INSTANCE, matchday=md, home_team=home, away_team=away, date=date))
+            added += 1
+
         db.session.commit()
+        if added:
+            print(f"Aggiunte {added} nuove partite (sedicesimi)")
     except Exception:
         db.session.rollback()
 
