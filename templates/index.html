@@ -757,6 +757,19 @@ async function loadAllUsersSelections() {
         }
         card.style.display = 'block';
 
+        // Find eliminated teams (not in latest matchday)
+        let eliminated = new Set();
+        try {
+            const allMatches = await API.get('/api/matches');
+            const maxMd = Math.max(...allMatches.map(m => m.matchday));
+            const teamsInLatest = new Set();
+            allMatches.filter(m => m.matchday === maxMd).forEach(m => { teamsInLatest.add(m.home_team); teamsInLatest.add(m.away_team); });
+            allMatches.forEach(m => {
+                if (!teamsInLatest.has(m.home_team) && m.matchday < maxMd) eliminated.add(m.home_team);
+                if (!teamsInLatest.has(m.away_team) && m.matchday < maxMd) eliminated.add(m.away_team);
+            });
+        } catch(e) {}
+
         // Only show team names if current user has already submitted
         let locked = false;
         try {
@@ -786,6 +799,11 @@ async function loadAllUsersSelections() {
             return `rgb(${r}, ${g}, 60)`;
         }
 
+        // Aggiungi legenda squadre eliminate
+        if (eliminated.size > 0) {
+            html += '<div style="font-size:0.8rem;color:#889;margin-bottom:0.5rem;">* squadra eliminata</div>';
+        }
+
         let html = '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>#</th><th>Giocatore</th><th>Totale</th>';
         if (locked) {
             Object.entries(punteggi).forEach(([f]) => {
@@ -801,7 +819,8 @@ async function loadAllUsersSelections() {
                     const detail = u.details[f];
                     if (detail) {
                         const color = ptColor(detail.points, f);
-                        html += `<td style="text-align:center;"><span style="font-size:0.85rem;">${detail.team}</span><br><span style="font-weight:700;color:${color};">${detail.points}pt</span></td>`;
+                        const asterisk = eliminated.has(detail.team) ? '<span style="color:#f0c040;">*</span>' : '';
+                        html += `<td style="text-align:center;"><span style="font-size:0.85rem;">${detail.team}${asterisk}</span><br><span style="font-weight:700;color:${color};">${detail.points}pt</span></td>`;
                     } else {
                         html += `<td style="text-align:center;color:#445;">-</td>`;
                     }
@@ -1278,11 +1297,26 @@ async function loadStandingsForGuests() {
     const card = document.getElementById('leaderboardCard');
     container.innerHTML = '<div class="empty-state"><p>Accedi per partecipare! Intanto ecco la classifica:</p></div>';
     try {
-        const standings = await API.get('/api/standings');
+        const [standings, allMatches] = await Promise.all([
+            API.get('/api/standings'),
+            API.get('/api/matches'),
+        ]);
         const withTeams = standings.filter(u => Object.keys(u.details || {}).length > 0);
         if (withTeams.length === 0) { card.style.display = 'none'; return; }
         card.style.display = 'block';
-        let html = '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>#</th><th>Giocatore</th><th>Punti</th></tr></thead><tbody>';
+        const maxMd = Math.max(...allMatches.map(m => m.matchday));
+        const teamsInLatest = new Set();
+        allMatches.filter(m => m.matchday === maxMd).forEach(m => { teamsInLatest.add(m.home_team); teamsInLatest.add(m.away_team); });
+        const eliminated = new Set();
+        allMatches.forEach(m => {
+            if (!teamsInLatest.has(m.home_team) && m.matchday < maxMd) eliminated.add(m.home_team);
+            if (!teamsInLatest.has(m.away_team) && m.matchday < maxMd) eliminated.add(m.away_team);
+        });
+        let html = '';
+        if (eliminated && eliminated.size > 0) {
+            html += '<div style="font-size:0.8rem;color:#889;margin-bottom:0.5rem;">* squadra eliminata</div>';
+        }
+        html += '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>#</th><th>Giocatore</th><th>Punti</th></tr></thead><tbody>';
         withTeams.forEach((u, i) => {
             const rank = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
             html += '<tr class="' + rank + '"><td class="pos">' + (i + 1) + '</td><td class="name">' + u.name + '</td><td class="pts">' + u.total_points + '</td></tr>';
