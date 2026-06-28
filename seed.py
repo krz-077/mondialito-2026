@@ -23,8 +23,8 @@ def norm(name):
 # Helper: datetime for Italian date/time in June 2026
 from datetime import datetime
 
-def dt(day, hour, minute=0):
-    return datetime(2026, 6, day, hour, minute)
+def dt(day, hour, minute=0, month=6):
+    return datetime(2026, month, day, hour, minute)
 
 # (matchday, home, away, datetime) — 72 partite, date/ora italiane da Wikipedia
 MATCHES = [
@@ -130,16 +130,16 @@ MATCHES = [
     (4, "Olanda", "Marocco", dt(30, 3)),                  # 29/06 19:00 UTC-6 → 30/06 03:00 IT
     (4, "Costa d'Avorio", "Norvegia", dt(30, 19)),        # 30/06 12:00 UTC-5
     (4, "Francia", "Svezia", dt(30, 23)),                 # 30/06 17:00 UTC-4
-    (4, "Messico", "Ecuador", dt(1, 3)),                  # 30/06 19:00 UTC-6 → 01/07 03:00 IT
-    (4, "Inghilterra", norm("Repubblica Democratica del Congo"), dt(1, 18)),  # 01/07 12:00 UTC-4
-    (4, "Belgio", "Senegal", dt(1, 22)),                  # 01/07 13:00 UTC-7
-    (4, norm("Usa"), norm("Bosnia-Erzegovina"), dt(2, 2)), # 01/07 17:00 UTC-7 → 02/07 02:00 IT
-    (4, "Spagna", "Austria", dt(2, 21)),                  # 02/07 12:00 UTC-7
-    (4, "Portogallo", "Croazia", dt(3, 1)),               # 02/07 19:00 UTC-4 → 03/07 01:00 IT
-    (4, "Svizzera", "Algeria", dt(3, 5)),                 # 02/07 20:00 UTC-7 → 03/07 05:00 IT
-    (4, "Australia", "Egitto", dt(3, 20)),                # 03/07 13:00 UTC-5
-    (4, "Argentina", "Capo Verde", dt(4, 0)),             # 03/07 18:00 UTC-4 → 04/07 00:00 IT
-    (4, "Colombia", "Ghana", dt(4, 3, 30)),               # 03/07 20:30 UTC-5 → 04/07 03:30 IT
+    (4, "Messico", "Ecuador", dt(1, 3, month=7)),                  # 30/06 19:00 UTC-6 → 01/07 03:00 IT
+    (4, "Inghilterra", norm("Repubblica Democratica del Congo"), dt(1, 18, month=7)),  # 01/07 12:00 UTC-4
+    (4, "Belgio", "Senegal", dt(1, 22, month=7)),                  # 01/07 13:00 UTC-7
+    (4, norm("Usa"), norm("Bosnia-Erzegovina"), dt(2, 2, month=7)), # 01/07 17:00 UTC-7 → 02/07 02:00 IT
+    (4, "Spagna", "Austria", dt(2, 21, month=7)),                  # 02/07 12:00 UTC-7
+    (4, "Portogallo", "Croazia", dt(3, 1, month=7)),               # 02/07 19:00 UTC-4 → 03/07 01:00 IT
+    (4, "Svizzera", "Algeria", dt(3, 5, month=7)),                 # 02/07 20:00 UTC-7 → 03/07 05:00 IT
+    (4, "Australia", "Egitto", dt(3, 20, month=7)),                # 03/07 13:00 UTC-5
+    (4, "Argentina", "Capo Verde", dt(4, 0, month=7)),             # 03/07 18:00 UTC-4 → 04/07 00:00 IT
+    (4, "Colombia", "Ghana", dt(4, 3, 30, month=7)),               # 03/07 20:30 UTC-5 → 04/07 03:30 IT
 ]
 
 def seed():
