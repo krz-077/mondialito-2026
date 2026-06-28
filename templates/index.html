@@ -800,11 +800,12 @@ async function loadAllUsersSelections() {
         }
 
         // Aggiungi legenda squadre eliminate
+        let html = '';
         if (eliminated.size > 0) {
             html += '<div style="font-size:0.8rem;color:#889;margin-bottom:0.5rem;">* squadra eliminata</div>';
         }
 
-        let html = '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>#</th><th>Giocatore</th><th>Totale</th>';
+        html += '<div style="overflow-x:auto;"><table class="standings-table"><thead><tr><th>#</th><th>Giocatore</th><th>Totale</th>';
         if (locked) {
             Object.entries(punteggi).forEach(([f]) => {
                 html += `<th style="text-align:center;color:#f0c040;font-size:0.8rem;">${f}°</th>`;
