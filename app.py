@@ -14,7 +14,11 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
 )
 # Use pg8000 driver for PostgreSQL (pure Python, no compilation)
 if app.config["SQLALCHEMY_DATABASE_URI"] and "postgresql://" in app.config["SQLALCHEMY_DATABASE_URI"]:
-    app.config["SQLALCHEMY_DATABASE_URI"] = app.config["SQLALCHEMY_DATABASE_URI"].replace(
+    url = app.config["SQLALCHEMY_DATABASE_URI"]
+    # Remove query params that pg8000 doesn't support (sslmode, channel_binding)
+    if "?" in url:
+        url = url.split("?")[0]
+    app.config["SQLALCHEMY_DATABASE_URI"] = url.replace(
         "postgresql://", "postgresql+pg8000://", 1
     )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
