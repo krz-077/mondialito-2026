@@ -391,14 +391,18 @@ def try_live_fetch():
             home_api = norm_api(home_name)
             away_api = norm_api(away_name)
             score = m.get("score")
-            if not score or score.get("fullTime", {}).get("home") is None:
+            if not score:
+                continue
+            # Usa regularTime (90 min) se disponibile, altrimenti fullTime
+            rt = score.get("regularTime") or score.get("fullTime")
+            if not rt or rt.get("home") is None:
                 continue
             match = Match.query.filter_by(instance=INSTANCE, home_team=home_api, away_team=away_api).first()
             if not match:
                 match = Match.query.filter_by(instance=INSTANCE, home_team=away_api, away_team=home_api).first()
-            if match and (match.home_score != score["fullTime"]["home"] or match.away_score != score["fullTime"]["away"]):
-                match.home_score = score["fullTime"]["home"]
-                match.away_score = score["fullTime"]["away"]
+            if match and (match.home_score != rt["home"] or match.away_score != rt["away"]):
+                match.home_score = rt["home"]
+                match.away_score = rt["away"]
                 updated += 1
                 teams_updated.add(match.home_team)
                 teams_updated.add(match.away_team)
