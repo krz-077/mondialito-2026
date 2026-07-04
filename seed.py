@@ -140,6 +140,16 @@ MATCHES = [
     (4, "Australia", "Egitto", dt(3, 20, month=7)),                # 03/07 13:00 UTC-5
     (4, "Argentina", "Capo Verde", dt(4, 0, month=7)),             # 03/07 18:00 UTC-4 → 04/07 00:00 IT
     (4, "Colombia", "Ghana", dt(4, 3, 30, month=7)),               # 03/07 20:30 UTC-5 → 04/07 03:30 IT
+
+    # --- Ottavi di finale (MD5) - orari italiani da Wikipedia ---
+    (5, "Canada", "Marocco", dt(4, 19, month=7)),                  # 04/07 12:00 UTC-5
+    (5, "Paraguay", "Francia", dt(4, 23, month=7)),                # 04/07 17:00 UTC-4
+    (5, "Brasile", "Norvegia", dt(5, 22, month=7)),                # 05/07 16:00 UTC-4
+    (5, "Messico", "Inghilterra", dt(6, 2, month=7)),              # 05/07 18:00 UTC-6 → 06/07 02:00 IT
+    (5, "Portogallo", "Spagna", dt(6, 21, month=7)),               # 06/07 14:00 UTC-5
+    (5, norm("Usa"), "Belgio", dt(7, 2, month=7)),                  # 06/07 17:00 UTC-7 → 07/07 02:00 IT
+    (5, "Argentina", "Egitto", dt(7, 18, month=7)),                # 07/07 12:00 UTC-4
+    (5, "Svizzera", "Colombia", dt(7, 22, month=7)),               # 07/07 13:00 UTC-7
 ]
 
 def seed():
