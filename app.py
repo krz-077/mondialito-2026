@@ -581,10 +581,13 @@ def fetch_results():
                 home_api = norm_api(home_name)
                 away_api = norm_api(away_name)
                 score = m.get("score")
-                if not score or score.get("fullTime", {}).get("home") is None:
+                if not score:
                     continue
-                home_goal = score["fullTime"]["home"]
-                away_goal = score["fullTime"]["away"]
+                rt = score.get("regularTime") or score.get("fullTime")
+                if not rt or rt.get("home") is None:
+                    continue
+                home_goal = rt["home"]
+                away_goal = rt["away"]
 
                 match = Match.query.filter_by(instance=INSTANCE, home_team=home_api, away_team=away_api).first()
                 if not match:
