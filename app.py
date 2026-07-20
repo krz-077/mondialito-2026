@@ -63,8 +63,9 @@ with app.app_context():
         except Exception:
             db.session.rollback()
 
-    # Migrate: elimina placeholder e rinomina squadre fasi finali
+    # Migrate: elimina placeholder e duplicati
     try:
+        # Elimina placeholder
         placeholders = [
             (7, "Vincente 97", "Vincente 98"),
             (7, "Vincente 99", "Vincente 100"),
@@ -73,6 +74,15 @@ with app.app_context():
         ]
         for md, old_h, old_a in placeholders:
             Match.query.filter_by(instance=INSTANCE, matchday=md, home_team=old_h, away_team=old_a).delete()
+
+        # Elimina duplicati (stessa partita con id maggiore)
+        all_m = Match.query.filter_by(instance=INSTANCE).order_by(Match.id).all()
+        seen = set()
+        for m in all_m:
+            key = (m.matchday, m.home_team, m.away_team)
+            if key in seen:
+                db.session.delete(m)
+            seen.add(key)
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -104,23 +114,6 @@ with app.app_context():
         db.session.commit()
         if added:
             print(f"Aggiunte {added} nuove partite")
-    except Exception:
-        db.session.rollback()
-
-    # Force: aggiorna nomi placeholder a nomi reali (per partite già esistenti)
-    try:
-        renames = [
-            (7, "Francia", "Spagna"),
-            (7, "Inghilterra", "Argentina"),
-            (8, "Francia", "Inghilterra"),
-            (9, "Spagna", "Argentina"),
-        ]
-        for md, new_h, new_a in renames:
-            existing = Match.query.filter_by(instance=INSTANCE, matchday=md, home_team="Vincente 97").first()
-            if existing:
-                existing.home_team = new_h
-                existing.away_team = new_a
-        db.session.commit()
     except Exception:
         db.session.rollback()
 
