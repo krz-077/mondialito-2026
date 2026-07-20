@@ -93,6 +93,23 @@ with app.app_context():
     except Exception:
         db.session.rollback()
 
+    # Migrate: aggiorna nomi placeholder delle fasi finali
+    try:
+        renames = [
+            (7, "Vincente 97", "Vincente 98", "Francia", "Spagna"),
+            (7, "Vincente 99", "Vincente 100", "Inghilterra", "Argentina"),
+            (8, "Perdente 101", "Perdente 102", "Francia", "Inghilterra"),
+            (9, "Vincente 101", "Vincente 102", "Spagna", "Argentina"),
+        ]
+        for md, old_h, old_a, new_h, new_a in renames:
+            match = Match.query.filter_by(instance=INSTANCE, matchday=md, home_team=old_h, away_team=old_a).first()
+            if match:
+                match.home_team = new_h
+                match.away_team = new_a
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
 
 @app.route("/")
 def index():

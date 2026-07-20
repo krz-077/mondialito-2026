@@ -157,15 +157,15 @@ MATCHES = [
     (6, "Norvegia", "Inghilterra", dt(11, 23, month=7)),          # 11/07 17:00 UTC-4
     (6, "Argentina", "Svizzera", dt(12, 3, month=7)),             # 11/07 20:00 UTC-5 → 12/07 03:00 IT
 
-    # --- Semifinali (MD7) - nomi da aggiornare dopo i quarti ---
-    (7, "Vincente 97", "Vincente 98", dt(14, 21, month=7)),       # 14/07 14:00 UTC-5
-    (7, "Vincente 99", "Vincente 100", dt(15, 21, month=7)),      # 15/07 15:00 UTC-4
+    # --- Semifinali (MD7) ---
+    (7, "Francia", "Spagna", dt(14, 21, month=7)),               # 14/07 14:00 UTC-5
+    (7, "Inghilterra", "Argentina", dt(15, 21, month=7)),        # 15/07 15:00 UTC-4
 
     # --- Finale terzo posto (MD8) ---
-    (8, "Perdente 101", "Perdente 102", dt(18, 23, month=7)),     # 18/07 17:00 UTC-4
+    (8, "Francia", "Inghilterra", dt(18, 23, month=7)),          # 18/07 17:00 UTC-4
 
     # --- Finale (MD9) ---
-    (9, "Vincente 101", "Vincente 102", dt(19, 21, month=7)),     # 19/07 15:00 UTC-4
+    (9, "Spagna", "Argentina", dt(19, 21, month=7)),             # 19/07 15:00 UTC-4
 ]
 
 def seed():
