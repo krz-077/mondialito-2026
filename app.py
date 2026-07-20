@@ -63,7 +63,21 @@ with app.app_context():
         except Exception:
             db.session.rollback()
 
-    # Migrate: aggiorna date partite, ordini casa/trasferta, e aggiunge nuove
+    # Migrate: elimina placeholder e rinomina squadre fasi finali
+    try:
+        placeholders = [
+            (7, "Vincente 97", "Vincente 98"),
+            (7, "Vincente 99", "Vincente 100"),
+            (8, "Perdente 101", "Perdente 102"),
+            (9, "Vincente 101", "Vincente 102"),
+        ]
+        for md, old_h, old_a in placeholders:
+            Match.query.filter_by(instance=INSTANCE, matchday=md, home_team=old_h, away_team=old_a).delete()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    # Migrate: aggiunge nuove partite dal seed
     try:
         from seed import MATCHES as seed_matches
         added = 0
@@ -89,23 +103,23 @@ with app.app_context():
 
         db.session.commit()
         if added:
-            print(f"Aggiunte {added} nuove partite (sedicesimi)")
+            print(f"Aggiunte {added} nuove partite")
     except Exception:
         db.session.rollback()
 
-    # Migrate: aggiorna nomi placeholder delle fasi finali
+    # Force: aggiorna nomi placeholder a nomi reali (per partite già esistenti)
     try:
         renames = [
-            (7, "Vincente 97", "Vincente 98", "Francia", "Spagna"),
-            (7, "Vincente 99", "Vincente 100", "Inghilterra", "Argentina"),
-            (8, "Perdente 101", "Perdente 102", "Francia", "Inghilterra"),
-            (9, "Vincente 101", "Vincente 102", "Spagna", "Argentina"),
+            (7, "Francia", "Spagna"),
+            (7, "Inghilterra", "Argentina"),
+            (8, "Francia", "Inghilterra"),
+            (9, "Spagna", "Argentina"),
         ]
-        for md, old_h, old_a, new_h, new_a in renames:
-            match = Match.query.filter_by(instance=INSTANCE, matchday=md, home_team=old_h, away_team=old_a).first()
-            if match:
-                match.home_team = new_h
-                match.away_team = new_a
+        for md, new_h, new_a in renames:
+            existing = Match.query.filter_by(instance=INSTANCE, matchday=md, home_team="Vincente 97").first()
+            if existing:
+                existing.home_team = new_h
+                existing.away_team = new_a
         db.session.commit()
     except Exception:
         db.session.rollback()
